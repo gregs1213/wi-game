@@ -1,0 +1,1191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>Worth It? A Money Choices Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: board on the left, turn panel and players on the right; stacks on phones */
+:root{
+  --bg:#f6f7f2; --surface:#ffffff; --fg:#1f2a24; --muted:#5b6b62; --line:#cfd8cf; --btn:#1f2a24; --btn-fg:#ffffff;
+  --payday:#2e8b57; --life:#1f7a8c; --cost:#c4472f; --store:#3559b5; --turn:#6b5b95; --happy:#d9822b; --move:#a88615; --loan:#8a3b5c;
+  --tint-payday:#e3f3ea; --tint-life:#e1f1f4; --tint-cost:#fbe6e1; --tint-store:#e5ebf8; --tint-turn:#ece8f4; --tint-happy:#fbecdc; --tint-move:#f8f1d6; --tint-loan:#f6e4ec;
+  --p1:#d1453b; --p2:#2f6fd6; --p3:#e0a21b; --p4:#7a3fb8;
+  --display:"Fredoka","Trebuchet MS",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible",Verdana,system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141a17; --surface:#1d2521; --fg:#e8eee9; --muted:#9fb0a6; --line:#33413a; --btn:#e8eee9; --btn-fg:#141a17;
+  --payday:#5fc88b; --life:#56b6c8; --cost:#ec7b63; --store:#7f9bea; --turn:#a796d1; --happy:#f0a55a; --move:#e2c25a; --loan:#d987a8;
+  --tint-payday:#1d3a2a; --tint-life:#173339; --tint-cost:#3d221d; --tint-store:#1e2740; --tint-turn:#2a2438; --tint-happy:#3b2a17; --tint-move:#37301a; --tint-loan:#3a2030;
+  --p1:#f06a5f; --p2:#6b9cf0; --p3:#f2c14e; --p4:#b07ce8; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141a17; --surface:#1d2521; --fg:#e8eee9; --muted:#9fb0a6; --line:#33413a; --btn:#e8eee9; --btn-fg:#141a17;
+  --payday:#5fc88b; --life:#56b6c8; --cost:#ec7b63; --store:#7f9bea; --turn:#a796d1; --happy:#f0a55a; --move:#e2c25a; --loan:#d987a8;
+  --tint-payday:#1d3a2a; --tint-life:#173339; --tint-cost:#3d221d; --tint-store:#1e2740; --tint-turn:#2a2438; --tint-happy:#3b2a17; --tint-move:#37301a; --tint-loan:#3a2030;
+  --p1:#f06a5f; --p2:#6b9cf0; --p3:#f2c14e; --p4:#b07ce8; color-scheme:dark}
+html{font-size:17.5px}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:1rem;line-height:1.4}
+.wrap{max-width:1560px;margin:0 auto;padding-block:10px 16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px}
+h1{font-size:1.45rem}
+.month{font-family:var(--display);font-weight:600;font-size:1.05rem}
+.month span{font-variant-numeric:tabular-nums;color:var(--muted);font-weight:500}
+button{font:inherit;cursor:pointer}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--store);outline-offset:2px}
+.btn{background:var(--btn);color:var(--btn-fg);border:0;border-radius:8px;padding:10px 16px;font-family:var(--display);font-weight:600;font-size:1rem}
+.btn.alt{background:transparent;color:var(--fg);border:2px solid var(--line)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+/* phones and narrow windows: everything stacks, turn panel right under the board */
+.game{display:flex;flex-direction:column;gap:12px}
+.side .action{order:1}.side .players{order:2}.side .logpanel{order:3}
+@media (max-width:600px){.sp .tx{display:none}.sp .nm{font-size:.7rem}.sp.corner .nm{font-size:.72rem}.center h2{font-size:1.3rem}.center{gap:6px;padding:6px}.months{grid-template-columns:repeat(4,auto)!important;gap:3px}.months span{font-size:.62rem;padding:1px 4px}.center .small{display:none}.dice .die{width:34px;height:34px;padding:3px}.dice .die i{width:5px;height:5px}.bigdie{width:54px;height:54px;padding:6px}.dicetray{--ds:52px}.bigdie i{width:9px;height:9px}.dicetray{gap:8px}.dicetray .who2{font-size:1.1rem}.dicetray .sum{font-size:1.1rem;min-height:0}.dicetray .sum small{font-size:.68rem}.dicetray{padding:4px}}
+/* computers: board fills the window height on the left, everything else on the right */
+@media (min-width:900px) and (min-height:520px){
+  .game{display:grid;grid-template-columns:auto minmax(340px,1fr);gap:14px;height:calc(100dvh - var(--hdr,56px) - 40px);align-items:start}
+  .board-scroll{width:min(calc(100dvh - var(--hdr,56px) - 40px),62vw);overflow:visible}
+  .panel.action{gap:8px;padding:12px}
+  .side .cpu-opts .mini .tx{font-size:.8rem}
+  .side .cpu-opts{gap:12px;padding:10px 8px 4px}
+  .side{height:100%;min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:10px}
+  .side .players{order:0}.side .action{order:1}.side .logpanel{order:2}
+  .panel.action{overflow:auto;min-height:0}
+  .logpanel{padding:6px 12px;gap:2px}
+  .logpanel h3{display:none}
+  .logpanel .log{max-height:3.4em}
+  .side .cpu-opts{grid-template-columns:repeat(auto-fit,minmax(108px,1fr))}
+  .side .cardgrid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+}
+.board-scroll{overflow-x:auto}
+.board{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);gap:4px;width:100%;min-width:0;aspect-ratio:1;background:var(--line);padding:4px;border-radius:10px}
+.sp{background:var(--surface);border-top:7px solid var(--c);display:flex;flex-direction:column;align-items:center;text-align:center;padding:4px;gap:2px;min-width:0;overflow:hidden;position:relative}
+.sp.corner{background:var(--t);border:3px solid var(--c)}
+.sp.hl{box-shadow:inset 0 0 0 3px var(--fg)}
+.sp .n{font-size:.66rem;color:var(--muted)}
+.sp .nm{font-family:var(--display);font-weight:600;font-size:.95rem;line-height:1.1;color:var(--c)}
+.sp .tx{font-size:.72rem;line-height:1.2}
+.tokens{display:flex;gap:3px;margin-top:auto;flex-wrap:wrap;justify-content:center;min-height:16px}
+.tok{width:16px;height:16px;border-radius:50%;background:var(--pc);border:2px solid var(--surface);box-shadow:0 0 0 1px var(--fg);font-size:.55rem;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center}
+.center{position:relative;grid-column:2/5;grid-row:2/5;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:10px;text-align:center}
+.center h2{font-size:1.9rem;color:var(--payday)}
+.months{display:grid;grid-template-columns:repeat(6,auto);gap:4px}
+.seats{display:flex;flex-direction:column;gap:8px}
+.seat{display:grid;grid-template-columns:auto minmax(0,10rem) minmax(0,1fr);gap:8px;align-items:center}
+.seat .tok{width:26px;height:26px;font-size:.8rem}
+.seat select,.seat input{font:inherit;padding:8px 10px;border-radius:8px;border:2px solid var(--line);background:var(--bg);color:var(--fg);min-width:0}
+.seat input:disabled{opacity:.4}
+.warn{color:var(--cost);font-weight:700;font-size:.85rem;margin:0}
+.decision{border:3px solid var(--pc);border-radius:10px;padding:10px 12px;font-family:var(--display);font-weight:600;font-size:1.1rem;background:var(--bg)}
+.decision small{display:block;font-family:var(--body);font-weight:400;font-size:.8rem;color:var(--muted)}
+.mini.chosen{box-shadow:0 0 0 4px var(--pc);position:relative}
+.mini.passed{opacity:.45}
+.mini .tag{font-family:var(--display);font-weight:600;font-size:.8rem;color:var(--pc)}
+.goals{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.goal{border:2px solid var(--line);border-radius:8px;padding:8px 10px;font-size:.85rem}
+.goal b{font-family:var(--display);display:block;font-size:1rem}
+.months span{font-size:.72rem;border:1.5px solid var(--line);border-radius:4px;padding:2px 7px;font-weight:700;color:var(--muted)}
+.months span.done{background:var(--line);color:var(--fg)}
+.months span.now{border-color:var(--payday);background:var(--tint-payday);color:var(--payday)}
+.dice{display:flex;gap:8px;align-items:center;font-family:var(--display);font-weight:600}
+.die{width:44px;height:44px;border:2px solid var(--fg);border-radius:9px;background:var(--surface);display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:5px}
+.die i{display:block;width:7px;height:7px;border-radius:50%;place-self:center}
+.die i.on{background:var(--fg)}
+.die.rolling{animation:shake .14s linear infinite}
+.die.landed{animation:land .35s ease-out}
+@keyframes shake{0%{transform:rotate(-14deg) translateY(-3px)}50%{transform:rotate(14deg) translateY(3px)}100%{transform:rotate(-14deg) translateY(-3px)}}
+@keyframes land{0%{transform:scale(1.3)}100%{transform:scale(1)}}
+.tok.hop{animation:hop .24s ease-out}
+@keyframes hop{0%{transform:translateY(0) scale(1)}50%{transform:translateY(-12px) scale(1.2)}100%{transform:translateY(0) scale(1)}}
+.sp.hl{animation:pulse .7s ease-out}
+@keyframes pulse{0%{background:var(--t)}100%{}}
+.bigcard{animation:flipIn .45s ease-out backwards}
+@keyframes flipIn{0%{opacity:0;transform:perspective(600px) rotateY(80deg) scale(.9)}100%{opacity:1;transform:none}}
+.cardgrid .mini{animation:dealIn .35s ease-out backwards}
+.cardgrid .mini:nth-child(2){animation-delay:.1s}.cardgrid .mini:nth-child(3){animation-delay:.2s}.cardgrid .mini:nth-child(4){animation-delay:.3s}
+@keyframes dealIn{0%{opacity:0;transform:translateY(18px) rotate(-5deg)}100%{opacity:1;transform:none}}
+.decision{animation:pop .3s ease-out backwards}
+@keyframes pop{0%{opacity:0;transform:scale(.85)}100%{opacity:1;transform:none}}
+.dicetray{--ds:78px;position:absolute;inset:0;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:5;border:4px solid var(--pc);animation:pop .25s ease-out backwards;overflow:hidden}
+/* 3D dice: each die is a cube with six faces that tumbles in and settles on the rolled number */
+.dicetray .drow{gap:calc(var(--ds)*.45)}
+.dieroll{width:var(--ds);height:var(--ds);perspective:700px;position:relative}
+.dieroll.go{animation:rollIn 1.5s cubic-bezier(.2,.8,.3,1) both}
+.dieroll:nth-child(2).go{animation-delay:.08s}
+@keyframes rollIn{0%{transform:translate(var(--dx),-50px)}32%{transform:translate(-14px,0)}46%{transform:translate(-6px,-18px)}60%{transform:translate(-2px,0)}72%{transform:translate(0,-6px)}84%,100%{transform:translate(0,0)}}
+.cube{width:100%;height:100%;position:relative;transform-style:preserve-3d}
+.face{position:absolute;inset:0;background:var(--surface);border:3px solid var(--fg);border-radius:16%;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:14%;backface-visibility:hidden}
+.face i{display:block;width:72%;aspect-ratio:1;border-radius:50%;place-self:center}
+.face i.on{background:var(--fg)}
+.f1{transform:translateZ(calc(var(--ds)/2))}
+.f2{transform:rotateY(90deg) translateZ(calc(var(--ds)/2))}
+.f3{transform:rotateX(90deg) translateZ(calc(var(--ds)/2))}
+.f4{transform:rotateX(-90deg) translateZ(calc(var(--ds)/2))}
+.f5{transform:rotateY(-90deg) translateZ(calc(var(--ds)/2))}
+.f6{transform:rotateY(180deg) translateZ(calc(var(--ds)/2))}
+.dshadow{position:absolute;left:8%;right:8%;bottom:calc(var(--ds)*-.28);height:calc(var(--ds)*.14);border-radius:50%;background:var(--fg);opacity:.15}
+.dicetray .who2{font-family:var(--display);font-weight:700;font-size:1.5rem;color:var(--pc)}
+.dicetray .drow{display:flex;gap:20px}
+.bigdie{width:78px;height:78px;border:3px solid var(--fg);border-radius:14px;background:var(--surface);display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:9px;box-shadow:0 6px 0 var(--line)}
+.bigdie i{display:block;width:13px;height:13px;border-radius:50%;place-self:center}
+.bigdie i.on{background:var(--fg)}
+.bigdie.tumble{animation:tumble .5s linear infinite}
+.bigdie.tumble:nth-child(2){animation-duration:.43s;animation-direction:reverse}
+.bigdie.landed{animation:land .4s ease-out}
+@keyframes tumble{0%{transform:translate(-12px,-16px) rotate(0)}25%{transform:translate(10px,6px) rotate(90deg)}50%{transform:translate(-6px,12px) rotate(180deg)}75%{transform:translate(12px,-8px) rotate(270deg)}100%{transform:translate(-12px,-16px) rotate(360deg)}}
+.dicetray .sum{font-family:var(--display);font-weight:700;font-size:1.6rem;min-height:2.6em;text-align:center}
+.dicetray .sum small{display:block;font-size:.9rem;font-weight:500;color:var(--muted);font-family:var(--body)}
+.cpu-opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;padding:8px 6px}
+.cpu-opts.btns{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+.opt{position:relative;display:flex;flex-direction:column;transition:opacity .35s,transform .25s;animation:dealIn .35s ease-out backwards}
+.opt:nth-child(2){animation-delay:.12s}.opt:nth-child(3){animation-delay:.24s}.opt:nth-child(4){animation-delay:.36s}
+.opt>*{flex:1}
+.fakebtn{border:2px solid var(--line);border-radius:8px;padding:12px;font-family:var(--display);font-weight:600;text-align:center;background:var(--bg);display:flex;align-items:center;justify-content:center;min-height:3em}
+.opt.scan{transform:translateY(-6px)}
+.opt.scan .mini,.opt.scan>.fakebtn{box-shadow:0 0 0 3px var(--pc)}
+.opt.notpicked{opacity:.3;transform:scale(.95)}
+.opt.picked{transform:scale(1.05)}
+.opt .ring{position:absolute;left:-10px;top:-10px;width:calc(100% + 20px);height:calc(100% + 20px);pointer-events:none;overflow:visible}
+.opt .ring ellipse{fill:none;stroke:var(--pc);stroke-width:2.6;stroke-linecap:round;stroke-dasharray:320;stroke-dashoffset:320;animation:draw .65s ease-out forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.opt .stamp{position:absolute;top:-14px;left:-8px;background:var(--pc);color:#fff;font-family:var(--display);font-weight:700;font-size:.85rem;padding:4px 10px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,.2);animation:pop .3s ease-out .45s backwards}
+.thinking{color:var(--muted);font-style:italic;margin:0;min-height:1.4em}
+.thinking::after{content:"";animation:dots 1.2s steps(4) infinite}
+@keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:50;overflow:hidden}
+.floater{position:fixed;transform:translate(-50%,0);font-family:var(--display);font-weight:700;font-size:1.35rem;white-space:nowrap;animation:floatUp 1.4s ease-out both;text-shadow:0 0 4px var(--surface),0 0 8px var(--surface)}
+.floater.up{color:var(--payday)}.floater.down{color:var(--cost)}.floater.chip{color:var(--happy)}.floater.loan{color:var(--loan)}
+@keyframes floatUp{0%{opacity:0;transform:translate(-50%,10px) scale(.7)}15%{opacity:1;transform:translate(-50%,0) scale(1.15)}100%{opacity:0;transform:translate(-50%,-64px) scale(1)}}
+.coin{position:fixed;width:14px;height:14px;border-radius:50%;background:var(--p3);border:2px solid var(--move);pointer-events:none;animation:coin .9s ease-out forwards}
+@keyframes coin{0%{transform:translate(-50%,-50%) scale(.4);opacity:1}100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1);opacity:0}}
+.banner{position:fixed;left:50%;top:38%;z-index:60;background:var(--surface);border:3px solid var(--bc,var(--payday));border-radius:16px;padding:16px 32px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.25);animation:bannerIn 1.4s ease-in-out both;pointer-events:none;display:flex;flex-direction:column;gap:2px;transform:translate(-50%,-50%)}
+.banner b{font-family:var(--display);font-size:2.2rem;color:var(--bc,var(--payday))}
+@keyframes bannerIn{0%{opacity:0;transform:translate(-50%,-40%) scale(.8)}15%,80%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-60%) scale(.95)}}
+.confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:58}
+.facedown{width:160px;height:100px;border-radius:12px;border:3px solid var(--happy);background:repeating-linear-gradient(45deg,var(--tint-happy) 0 10px,var(--surface) 10px 20px);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:2rem;color:var(--happy);animation:wobble .5s ease-in-out infinite}
+@keyframes wobble{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg) scale(1.04)}}
+.side{display:flex;flex-direction:column;gap:12px;min-width:0}
+.panel{background:var(--surface);border:2px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.panel.action{border-color:var(--fg)}
+.who{font-family:var(--display);font-weight:600;font-size:1.1rem;display:flex;align-items:center;gap:8px}
+.who .tok{width:20px;height:20px}
+.prompt{font-size:1rem}
+.choices{display:flex;flex-wrap:wrap;gap:8px}
+.cardgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.mini{background:var(--surface);border:2px solid var(--c);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;text-align:left;padding:0;color:var(--fg)}
+.mini:disabled{opacity:.45;cursor:not-allowed}
+.mini .top{background:var(--t);color:var(--c);font-family:var(--display);font-weight:600;font-size:.76rem;letter-spacing:.05em;text-transform:uppercase;padding:4px 8px;display:flex;justify-content:space-between;gap:6px}
+.mini .bd{padding:6px 8px 8px;display:flex;flex-direction:column;gap:3px}
+.mini .tt{font-family:var(--display);font-weight:600;font-size:1.02rem;line-height:1.15}
+.mini .tx{font-size:.86rem}
+.mini .why{font-size:.72rem;font-weight:700;color:var(--muted)}
+.bigcard{border:3px solid var(--c);border-radius:12px;overflow:hidden;max-width:340px}
+.bigcard .top{background:var(--t);color:var(--c);font-family:var(--display);font-weight:600;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;padding:6px 12px}
+.bigcard .bd{padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.bigcard .tt{font-family:var(--display);font-weight:600;font-size:1.2rem}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pill{font-size:.8rem;font-weight:700;border-radius:999px;padding:2px 8px;background:var(--bg);border:1px solid var(--line);font-variant-numeric:tabular-nums}
+.pill.neg{color:var(--cost)} .pill.pos{color:var(--payday)} .pill.hap{color:var(--happy)} .pill.bill{background:var(--cost);color:var(--surface);border-color:var(--cost)}
+.players{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px}
+.pl{border:2px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:2px;min-width:0;background:var(--surface)}
+.pl .big{font-family:var(--display);font-weight:700;font-size:1.35rem;font-variant-numeric:tabular-nums;line-height:1.2}
+.pl .nm .small{font-weight:400;font-family:var(--body)}
+.items{max-height:4.4em;overflow:hidden}
+.pl.active{border-color:var(--pc);box-shadow:0 0 0 2px var(--pc)}
+.pl.loanflash{animation:loanShake .7s ease-in-out;border-color:var(--loan);box-shadow:0 0 0 3px var(--loan)}
+@keyframes loanShake{0%,100%{transform:none}15%{transform:translateX(-7px) rotate(-1deg)}35%{transform:translateX(7px) rotate(1deg)}55%{transform:translateX(-5px)}75%{transform:translateX(4px)}}
+.loanpop{position:fixed;z-index:62;transform:translate(-50%,-50%);background:var(--surface);border:4px solid var(--loan);border-radius:16px;padding:14px 18px;display:flex;gap:12px;align-items:center;width:max-content;max-width:min(90vw,400px);box-shadow:0 16px 40px rgba(0,0,0,.3);animation:loanIn .5s cubic-bezier(.2,1.5,.4,1) backwards;pointer-events:none}
+.loanpop .ico{width:58px;height:58px;--c:var(--loan);--t:var(--tint-loan)}
+.loanpop b{display:block;font-family:var(--display);font-size:1.25rem;color:var(--loan)}
+.loanpop span{font-size:.92rem}
+@keyframes loanIn{0%{transform:translate(-50%,-50%) scale(.3) rotate(-10deg);opacity:0}100%{transform:translate(-50%,-50%) scale(1) rotate(0);opacity:1}}
+.pl .row{display:flex;justify-content:space-between;gap:6px;font-size:.86rem}
+.pl .row b{font-variant-numeric:tabular-nums}
+.pl .nm{font-family:var(--display);font-weight:600;display:flex;align-items:center;gap:6px}
+.items{display:flex;flex-wrap:wrap;gap:4px}
+.items span{font-size:.76rem;border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+.items span.b{border-color:var(--cost);color:var(--cost);font-weight:700}
+.log{max-height:240px;overflow:auto;font-size:.9rem;display:flex;flex-direction:column;gap:3px}
+.log div{border-left:3px solid var(--pc,var(--line));padding-left:7px}
+.log .sys{font-weight:700;--pc:var(--fg)}
+.small{font-size:.86rem;color:var(--muted)}
+.setup{max-width:560px;display:flex;flex-direction:column;gap:14px}
+.setup label{display:flex;flex-direction:column;gap:4px;font-weight:700}
+.setup input,.setup select{font:inherit;padding:8px 10px;border-radius:8px;border:2px solid var(--line);background:var(--bg);color:var(--fg)}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.toolbar select{font:inherit;padding:4px 8px;border-radius:6px;border:1.5px solid var(--line);background:var(--bg);color:var(--fg)}
+table{border-collapse:collapse;width:100%;font-size:.88rem;font-variant-numeric:tabular-nums}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right}
+th:first-child,td:first-child{text-align:left}
+.tablewrap{overflow-x:auto}
+/* icons: drawn in code, colored from the space or card color so they work in light and dark */
+.ico{display:block;flex:none}
+.ico .ip{fill:var(--c,var(--payday))}.ico .il{fill:var(--t,var(--tint-payday))}.ico .iw{fill:var(--surface)}.ico .id{fill:var(--fg)}.ico .nf{fill:none}
+.ico .sk{stroke:var(--fg);stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
+.ico .skw{stroke:var(--surface);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.ico .skc{stroke:var(--c,var(--payday));stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.sp .ico{width:clamp(22px,24%,40px);height:auto;aspect-ratio:1;margin:1px 0}
+.sp.corner .ico{width:clamp(26px,30%,48px)}
+.center .ico{width:64px;height:64px;--c:var(--payday);--t:var(--tint-payday)}
+.mini .ico.mi{float:right;width:36px;height:36px;margin:0 0 4px 6px}
+.bigcard .bd{display:grid;grid-template-columns:1fr auto;column-gap:10px}
+.bigcard .bd>*{grid-column:1}
+.bigcard .ico.bi{grid-column:2;grid-row:1/span 3;width:60px;height:60px;align-self:start}
+.pl .ico.ri{display:inline-block;width:20px;height:20px;vertical-align:-5px;margin-right:3px;--c:var(--move);--t:var(--tint-move)}
+@media (max-width:600px){.sp .ico{width:26%;margin:0}.sp:not(.corner) .ico{display:none}.sp .n{display:none}.sp{padding:3px 2px;justify-content:center}.center .ico{width:34px;height:34px}}
+.billtab{border-collapse:collapse;width:auto;min-width:240px;font-size:1rem}
+.billtab td{padding:4px 10px;border-bottom:1px solid var(--line)}
+.billtab td:last-child{text-align:right;color:var(--cost);font-weight:700}
+.billtab tr.tot td{border-bottom:0;border-top:2px solid var(--fg);font-family:var(--display);font-size:1.15rem}
+.billtab tr.tot td:first-child{color:var(--fg)}
+/* read-aloud speaker button on cards */
+.saybtn{display:inline-flex;align-items:center;justify-content:center;width:34px;height:30px;border-radius:8px;border:2px solid var(--c,var(--line));background:var(--surface);color:var(--c,var(--fg));padding:0;flex:none}
+.saybtn svg{width:20px;height:20px}
+.saybtn:hover{background:var(--t,var(--bg))}
+.bigcard .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.bigcard .top .saybtn{width:38px;height:32px}
+.cardwrap{position:relative;display:flex;flex-direction:column;min-width:0}
+.cardwrap>.mini{flex:1}
+.cardwrap .mini .bd{padding-bottom:42px}
+.cardwrap>.saybtn{position:absolute;right:8px;bottom:8px}
+.toast{position:fixed;left:50%;bottom:max(20px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:70;max-width:min(92vw,420px);background:var(--fg);color:var(--bg);padding:12px 16px;border-radius:12px;font-size:.95rem;box-shadow:0 8px 24px rgba(0,0,0,.25);animation:pop .25s ease-out backwards}
+/* center logo: a balance scale weighing money against happiness */
+.board .center{background:radial-gradient(circle at 50% 32%,var(--tint-happy),var(--surface) 72%)}
+.logo{display:flex;flex-direction:column;align-items:center;gap:4px}
+.logo-art{width:min(66%,240px);height:auto;overflow:visible}
+.logo h2{font-family:var(--display);font-weight:700;font-size:clamp(1.7rem,3.2vw,2.7rem);line-height:1;color:var(--fg);margin:0}
+.logo h2 .q{color:var(--happy);display:inline-block;transform:rotate(12deg);margin-left:2px}
+.logo .tag{font-size:.85rem;color:var(--muted);letter-spacing:.02em}
+.logo-art .beam{transform-origin:80px 28px;transform-box:view-box;animation:teeter 4.5s ease-in-out infinite}
+@keyframes teeter{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+@media (max-width:600px){.logo-art{width:52%}.logo .tag{display:none}.logo h2{font-size:1.25rem}}
+/* tap-to-roll dice for real players */
+.dicebtn{all:unset;display:block;border-radius:22px;padding:14px 20px;cursor:default}
+.dicebtn.ready{cursor:pointer;animation:readyPulse 1.5s ease-in-out infinite}
+.dicebtn.ready:focus-visible{outline:3px solid var(--pc);outline-offset:4px}
+.dicebtn.ready .cube{animation:idleTilt 1.5s ease-in-out infinite}
+.dicebtn.ready .dieroll:nth-child(2) .cube{animation-delay:-.75s}
+@keyframes readyPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 var(--pc)}60%{transform:scale(1.08);box-shadow:0 0 0 18px transparent}}
+@keyframes idleTilt{0%,100%{transform:rotateX(-24deg) rotateY(28deg) rotateZ(0deg)}50%{transform:rotateX(-12deg) rotateY(44deg) rotateZ(0deg)}}
+.dicetray .hint{display:block;font-family:var(--display);font-size:1.2rem;color:var(--pc);animation:hintFade 1.5s ease-in-out infinite}
+@keyframes hintFade{0%,100%{opacity:1}50%{opacity:.55}}
+/* "skip" choices shown as cards */
+.mini.skip{border-style:dashed;background:var(--bg)}
+.mini.skip .top{background:transparent}
+/* step counter, landing spotlight, and cards flying from a space */
+.stepnum{position:absolute;top:18%;left:50%;transform:translateX(-50%);z-index:4;min-width:30px;height:30px;padding:0 6px;border-radius:999px;background:var(--pc);color:#fff;font-family:var(--display);font-weight:700;font-size:1.05rem;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(0,0,0,.25);border:2px solid var(--surface);animation:pop .18s ease-out backwards;pointer-events:none}
+.sp.landing{animation:spotlight 1s ease-out;z-index:3}
+@keyframes spotlight{0%{transform:scale(1)}25%{transform:scale(1.14);box-shadow:0 0 0 5px var(--c),0 10px 24px rgba(0,0,0,.28)}70%{transform:scale(1.06);box-shadow:0 0 0 4px var(--c),0 6px 16px rgba(0,0,0,.2)}100%{transform:scale(1);box-shadow:0 0 0 0 transparent}}
+.flycard{position:fixed;width:92px;height:124px;border-radius:12px;border:3px solid var(--c);background:repeating-linear-gradient(45deg,var(--t) 0 9px,var(--surface) 9px 18px);display:flex;align-items:center;justify-content:center;box-shadow:0 10px 26px rgba(0,0,0,.3);pointer-events:none;will-change:transform}
+.flycard .ico{width:50px;height:50px}
+/* end-of-game results */
+.endmodal{position:fixed;inset:0;z-index:65;background:rgba(0,0,0,.45);display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding-block:max(16px,env(safe-area-inset-top,0px)) 24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.endbox{background:var(--surface);color:var(--fg);border-radius:16px;max-width:1040px;width:100%;padding:20px;display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 50px rgba(0,0,0,.35);animation:pop .3s ease-out backwards}
+.endbox h2{font-size:1.6rem}
+.endtop{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:700px){.endtop{grid-template-columns:1fr}}
+.lesson{background:var(--tint-happy);border-radius:12px;padding:12px 14px;font-size:1rem}
+.lesson b{font-family:var(--display)}
+.recap{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.rc{border:2px solid var(--pc);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.rc h3{font-size:1.1rem;display:flex;align-items:center;gap:6px}
+.rc .tot{font-size:.85rem;color:var(--muted)}
+.bar{display:grid;grid-template-columns:6.4em minmax(0,1fr) 3.4em;gap:6px;align-items:center;font-size:.76rem;line-height:1.15}
+.bar .track{height:12px;background:var(--bg);border-radius:6px;overflow:hidden;border:1px solid var(--line)}
+.bar .fill{height:100%;background:var(--c);border-radius:6px;transform-origin:left;animation:grow .9s ease-out backwards}
+.bar b{text-align:right;font-variant-numeric:tabular-nums}
+@keyframes grow{from{transform:scaleX(0)}}
+.deal{font-size:.85rem;line-height:1.3}
+.deal.good b{color:var(--payday)}.deal.bad b{color:var(--cost)}
+.resume{border:2px solid var(--payday);border-radius:12px;padding:12px;background:var(--tint-payday);display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+html.no-anim *{transition:none!important;animation:none!important}html.no-anim .opt .ring ellipse{stroke-dashoffset:0!important}
+.hbtns{display:flex;gap:8px;flex-wrap:wrap}
+</style>
+
+<style>*{box-sizing:border-box}body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Worth It?</h1>
+    <div class="toolbar" id="toolbar" hidden>
+      <span class="month" id="monthLabel"></span>
+      <label class="small" for="speed">Computer turns</label>
+      <select id="speed"><option value="step">Click to continue</option><option value="1.6">Auto, slow</option><option value="1" selected>Auto, normal</option><option value="0.5">Auto, fast</option></select>
+      <button class="btn alt" id="restart" type="button">New game</button>
+    </div>
+    <div class="hbtns"><button class="btn alt" id="animBtn" type="button" aria-pressed="true">Animations: on</button><button class="btn alt" id="soundBtn" type="button" aria-pressed="true">Sound: on</button></div>
+  </header>
+
+  <div class="panel setup" id="setup">
+    <div class="resume" id="resumeBox" hidden><div><b>You have a saved game</b><div class="small" id="resumeInfo"></div></div><div class="choices"><button class="btn" id="resumeBtn" type="button">Continue game</button><button class="btn alt" id="dropSave" type="button">Delete it</button></div></div>
+    <h2>Set up a game</h2>
+    <p class="small" style="margin:0">Play anywhere from 6 to 12 months. Everyone starts with $300, gets a $500 paycheck at the start of each month, and pays $400 rent plus bills at the end. Not enough money? You can take a $100 Loan card for anything, but you pay back $150. You can own only one of each Store card. At the end of the game, pay back your loans and cash in your happiness chips. The player with the most money wins.</p>
+    <label for="nmonths">Months to play<select id="nmonths"><option value="6">6 (shortest)</option><option value="8">8</option><option value="10" selected>10</option><option value="12">12 (full year)</option></select></label>
+    <div><b>Players</b> <span class="small">(2 to 4). Real players take turns on this device.</span></div>
+    <div class="seats" id="seats"></div>
+    <p class="warn" id="seatWarn" hidden>Choose at least 2 players.</p>
+    <div><button class="btn" id="startBtn" type="button">Start game</button></div>
+  </div>
+
+  <div class="game" id="game" hidden>
+    <div class="board-scroll"><div class="board" id="board"></div></div>
+    <div class="side">
+      <div class="players" id="players"></div>
+      <div class="panel action" id="action"></div>
+      <div class="panel logpanel"><h3 style="font-size:.9rem">Game log</h3><div class="log" id="log"></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const PCOL=["--p1","--p2","--p3","--p4"];
+const ICON={
+ payday:`<rect class="ip sk" x="5" y="9" width="38" height="22" rx="3"/><circle class="iw sk" cx="24" cy="20" r="6"/><ellipse class="il sk" cx="33" cy="39" rx="9" ry="3.4"/><ellipse class="il sk" cx="33" cy="35" rx="9" ry="3.4"/>`,
+ life:`<rect class="il sk" x="9" y="8" width="24" height="32" rx="3" transform="rotate(-10 21 24)"/><g transform="rotate(8 27 24)"><rect class="ip sk" x="15" y="8" width="24" height="32" rx="3"/><path class="nf skw" d="M23 19.5a4 4 0 1 1 5.4 3.8c-1.2.5-1.4 1.3-1.4 2.7"/><circle class="iw" cx="27" cy="31.5" r="1.8"/></g>`,
+ phone:`<rect class="ip sk" x="14" y="4" width="20" height="40" rx="4"/><rect class="iw" x="17.5" y="9" width="13" height="25" rx="1.5"/><circle class="iw" cx="24" cy="39" r="1.8"/>`,
+ dayoff:`<circle class="ip sk" cx="35" cy="11" r="6"/><rect class="il sk" x="7" y="21" width="34" height="12" rx="4"/><rect class="ip sk" x="11" y="29" width="26" height="8" rx="2"/><rect class="ip sk" x="4" y="26" width="8" height="12" rx="3"/><rect class="ip sk" x="36" y="26" width="8" height="12" rx="3"/><path class="nf sk" d="M8 38v4M40 38v4"/>`,
+ dinner:`<circle class="il sk" cx="25" cy="25" r="13"/><circle class="iw sk" cx="25" cy="25" r="8"/><path class="nf sk" d="M4 9v7a2.5 2.5 0 0 0 5 0V9M6.5 9v32"/><path class="ip sk" d="M44 8c-3.5 2-5 6-5 12h5v21"/>`,
+ car:`<path class="ip sk" d="M5 32v-8l6-9h21l7 9h4v8z"/><path class="iw" d="M13.5 17.5h7v6.5h-11zM23.5 17.5h7.5l4.6 6.5h-12.1z"/><circle class="id" cx="14" cy="33" r="5"/><circle class="id" cx="34" cy="33" r="5"/><circle class="iw" cx="14" cy="33" r="1.8"/><circle class="iw" cx="34" cy="33" r="1.8"/>`,
+ store:`<path class="ip sk" d="M8 16h32l-2.5 27h-27z"/><path class="nf sk" d="M17 21v-7a7 7 0 0 1 14 0v7"/><circle class="iw" cx="17" cy="21" r="2"/><circle class="iw" cx="31" cy="21" r="2"/>`,
+ sick:`<rect class="iw sk" x="19" y="4" width="10" height="30" rx="5"/><rect class="ip" x="22" y="14" width="4" height="20"/><circle class="ip sk" cx="24" cy="37" r="7"/><path class="nf sk" d="M32 12h5M32 18h5M32 24h5"/>`,
+ alarm:`<path class="ip sk" d="M7 15a7 7 0 0 1 10-8zM37 15a7 7 0 0 0-10-8z"/><circle class="iw sk" cx="22" cy="27" r="13"/><path class="nf sk" d="M22 20v8l5 3M13 40l-3 4M31 40l3 4"/><path class="nf skc" d="M37 4h7l-7 8h7"/>`,
+ overtime:`<rect class="ip sk" x="4" y="17" width="28" height="22" rx="3"/><path class="nf sk" d="M13 17v-4h10v4M4 27h28"/><path class="nf skc" d="M35 23h10M40 18l5 5-5 5"/>`,
+ walk:`<path class="ip sk" d="M5 34c0-7 2-15 6-19l9 6c4 3 10 5 17 6 5 1 7 3 7 6v1z"/><rect class="iw sk" x="4" y="34" width="40" height="5" rx="2"/><path class="nf skw" d="M15 21l3-3M19 24l3-3"/>`,
+ bike:`<circle class="nf sk" cx="12" cy="32" r="8"/><circle class="nf sk" cx="36" cy="32" r="8"/><path class="nf skc" d="M12 32l7-12h12l5 12M19 20l7 12H12M31 20l-2-6h-5"/>`,
+ bus:`<rect class="ip sk" x="7" y="5" width="34" height="33" rx="5"/><rect class="iw" x="11" y="10" width="26" height="12" rx="2"/><circle class="iw" cx="14" cy="30" r="2.6"/><circle class="iw" cx="34" cy="30" r="2.6"/><path class="nf sk" d="M13 38v5M35 38v5"/>`,
+ friends:`<circle class="ip sk" cx="17" cy="15" r="6"/><circle class="il sk" cx="31" cy="15" r="6"/><path class="ip sk" d="M6 41c0-9 5-15 11-15s11 6 11 15z"/><path class="il sk" d="M20 41c0-9 5-15 11-15s11 6 11 15z"/>`,
+ warn:`<path class="ip sk" d="M24 5l20 35H4z"/><path class="nf skw" d="M24 17v11"/><circle class="iw" cx="24" cy="34" r="2.2"/>`,
+ sad:`<circle class="ip sk" cx="24" cy="24" r="18"/><circle class="id" cx="18" cy="20" r="2.2"/><circle class="id" cx="30" cy="20" r="2.2"/><path class="nf sk" d="M17 33c4-4.5 10-4.5 14 0"/>`,
+ smile:`<circle class="ip sk" cx="24" cy="24" r="18"/><circle class="id" cx="18" cy="20" r="2.2"/><circle class="id" cx="30" cy="20" r="2.2"/><path class="nf sk" d="M16 28c4 5 12 5 16 0"/>`,
+ rain:`<path class="il sk" d="M14 31a8 8 0 0 1 .5-16 10 10 0 0 1 19.5 3 6.5 6.5 0 0 1 0 13z"/><path class="nf skc" d="M17 36l-2 6M25 36l-2 6M33 36l-2 6"/>`,
+ sun:`<circle class="ip sk" cx="24" cy="24" r="9"/><path class="nf skc" d="M24 4v6M24 38v6M4 24h6M38 24h6M10 10l4 4M34 34l4 4M38 10l-4 4M14 34l-4 4"/>`,
+ gift:`<rect class="ip sk" x="8" y="20" width="32" height="22" rx="2"/><rect class="il sk" x="6" y="14" width="36" height="7" rx="2"/><path class="nf sk" d="M24 14v28M24 14c-3-7-11-7-11-2 0 2 5 2.5 11 2zM24 14c3-7 11-7 11-2 0 2-5 2.5-11 2z"/>`,
+ health:`<rect class="iw sk" x="6" y="7" width="36" height="34" rx="6"/><path class="ip" d="M20 13h8v8h8v8h-8v8h-8v-8h-8v-8h8z"/>`,
+ tv:`<rect class="ip sk" x="4" y="9" width="40" height="27" rx="3"/><rect class="iw" x="8" y="13" width="32" height="19" rx="1.5"/><path class="nf sk" d="M24 36v6M16 42h16"/>`,
+ can:`<rect class="ip sk" x="14" y="5" width="20" height="38" rx="4"/><path class="nf sk" d="M14 11h20"/><path class="iw" d="M26 15l-7 12h5l-2 10 8-13h-5z"/>`,
+ bottle:`<rect class="il sk" x="19" y="3" width="10" height="9" rx="2"/><rect class="ip sk" x="12" y="12" width="24" height="32" rx="7"/><rect class="iw" x="17" y="23" width="14" height="11" rx="2"/>`,
+ game:`<rect class="ip sk" x="4" y="14" width="40" height="22" rx="11"/><path class="nf skw" d="M14 20v10M9 25h10"/><circle class="iw" cx="31" cy="23" r="2.4"/><circle class="iw" cx="37" cy="28" r="2.4"/>`,
+ star:`<path class="ip sk" d="M24 4.5l5.8 11.7 12.9 1.9-9.3 9.1 2.2 12.8L24 34l-11.6 6 2.2-12.8-9.3-9.1 12.9-1.9z"/>`,
+ umbrella:`<path class="ip sk" d="M4 25a20 20 0 0 1 40 0z"/><path class="nf sk" d="M24 25v14a4.5 4.5 0 0 1-9 0"/>`,
+ jar:`<rect class="il sk" x="11" y="14" width="26" height="29" rx="6"/><rect class="ip sk" x="13" y="6" width="22" height="8" rx="2"/><circle class="ip sk" cx="24" cy="29" r="6"/>`,
+ coupon:`<path class="ip sk" d="M5 13h38v7a4 4 0 0 0 0 8v7H5v-7a4 4 0 0 0 0-8z"/><path class="nf skw" d="M17 15v18" stroke-dasharray="3 3"/><circle class="iw" cx="28" cy="20" r="2"/><circle class="iw" cx="34" cy="28" r="2"/><path class="nf skw" d="M35 19l-8 10"/>`,
+ loan:`<path class="ip sk" d="M4 18L24 6l20 12z"/><path class="nf sk" d="M10 22v14M19 22v14M29 22v14M38 22v14"/><rect class="il sk" x="5" y="37" width="38" height="5" rx="1"/>`
+};
+const ico=(n,cls="")=>ICON[n]?`<svg class="ico ${cls}" viewBox="0 0 48 48" aria-hidden="true">${ICON[n]}</svg>`:"";
+const STORE_ICON={phone:"phone",dcase:"phone",alarm:"alarm",speaker:"alarm",health:"health",carins:"car",tvwar:"tv",coupon:"coupon",umbrella:"umbrella",jar:"jar",stream:"tv",mbox:"gift",rto:"tv",energy:"can",delivery:"dinner",toy:"star",gadget:"phone",skincare:"bottle",shoes:"walk",newphone:"phone",coins:"game"};
+const LIFE_ICON={"Broken Phone":"phone","Doctor Visit":"health","Car Accident":"car","Car Trouble":"car","Parking Ticket":"car","Lost Wallet":"payday","Found Money":"payday","Birthday Money":"gift","Tax Refund":"payday","Work Bonus":"payday","Sold Old Clothes":"payday","Free Concert":"star","Concert with Friends":"star","Pizza Night":"dinner","Birthday Party":"gift"};
+const KIND_ICON={fun:"friends",cost:"warn",bad:"sad",rain:"rain",sun:"sun",gain:"gift",freehap:"smile"};
+const SPACE_ICON={1:"payday",3:"phone",5:"dayoff",6:"dinner",8:"car",9:"store",12:"sick",13:"alarm",15:"overtime"};
+/* read aloud: uses the computer's built-in voice, only when a speaker button is pressed */
+const canSpeak="speechSynthesis" in window&&typeof SpeechSynthesisUtterance!=="undefined";
+const SPEAKER=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h4l5-4v14l-5-4H3z" fill="currentColor"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+const escAttr=t=>String(t).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+function plain(h){const d=document.createElement("div");d.innerHTML=String(h||"").replace(/<\/(span|div|p|li)>/g,". </$1>");return d.textContent}
+function speakable(...parts){
+  return parts.map(plain).join(". ").replace(/−\$/g,"minus $").replace(/\+\$/g,"plus $").replace(/\+(\d)/g,"plus $1")
+    .replace(/\s+/g," ").replace(/\s*\.(\s*\.)+/g,".").replace(/([!?])\./g,"$1").trim();
+}
+const sayBtn=t=>`<button type="button" class="saybtn" aria-label="Read this card aloud" title="Read aloud" data-say="${escAttr(t)}">${SPEAKER}</button>`;
+function toast(msg){
+  document.querySelectorAll(".toast").forEach(t=>t.remove());
+  const t=document.createElement("div");t.className="toast";t.setAttribute("role","status");t.textContent=msg;document.body.appendChild(t);
+  setTimeout(()=>t.remove(),4500);
+}
+function say(t){
+  if(!canSpeak){toast("Read aloud doesn't work in this viewer. Open the game in Chrome, Edge, or Safari to hear the cards.");return}
+  try{
+    speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);
+    const vs=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang));u.voice=vs.find(v=>v.localService&&/en-US/i.test(v.lang))||vs.find(v=>v.localService)||vs[0]||null;
+    u.rate=.9;speechSynthesis.speak(u);
+  }catch(e){}
+}
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest(".saybtn");if(!b)return;e.stopPropagation();e.preventDefault();say(b.dataset.say)},true);
+const LOGO_ART=`<svg class="logo-art" viewBox="0 0 160 100" aria-hidden="true">
+<path d="M80 30L70 87h20z" style="fill:var(--move);stroke:var(--fg);stroke-width:2.5;stroke-linejoin:round"/>
+<rect x="54" y="86" width="52" height="8" rx="4" style="fill:var(--move);stroke:var(--fg);stroke-width:2.5"/>
+<g class="beam">
+<rect x="16" y="25" width="128" height="6" rx="3" style="fill:var(--fg)"/>
+<path d="M30 28L15 58M30 28l15 30M130 28l-15 30M130 28l15 30" style="fill:none;stroke:var(--fg);stroke-width:1.8"/>
+<ellipse cx="30" cy="54" rx="12" ry="4.2" style="fill:var(--p3);stroke:var(--fg);stroke-width:2"/>
+<ellipse cx="30" cy="49" rx="12" ry="4.2" style="fill:var(--p3);stroke:var(--fg);stroke-width:2"/>
+<ellipse cx="30" cy="44" rx="12" ry="4.2" style="fill:var(--p3);stroke:var(--fg);stroke-width:2"/>
+<path d="M26 42.5h8" style="stroke:var(--fg);stroke-width:1.6;stroke-linecap:round"/>
+<path d="M9 58h42q-2 13-21 13T9 58z" style="fill:var(--surface);stroke:var(--fg);stroke-width:2.5;stroke-linejoin:round"/>
+<circle cx="130" cy="46" r="11" style="fill:var(--happy);stroke:var(--fg);stroke-width:2"/>
+<circle cx="126" cy="43.5" r="1.7" style="fill:var(--fg)"/><circle cx="134" cy="43.5" r="1.7" style="fill:var(--fg)"/>
+<path d="M124.5 49q5.5 5.5 11 0" style="fill:none;stroke:var(--fg);stroke-width:2;stroke-linecap:round"/>
+<path d="M109 58h42q-2 13-21 13t-21-13z" style="fill:var(--surface);stroke:var(--fg);stroke-width:2.5;stroke-linejoin:round"/>
+</g>
+<circle cx="80" cy="28" r="6" style="fill:var(--happy);stroke:var(--fg);stroke-width:2.5"/>
+</svg>`;
+const SPACES=[
+ {n:1,name:"BONUS",type:"payday",tx:"Collect $200",corner:1},
+ {n:2,name:"Life Card",type:"life",tx:"Draw a card"},
+ {n:3,name:"Phone Bill",type:"cost",tx:"Pay $50"},
+ {n:4,name:"Life Card",type:"life",tx:"Draw a card"},
+ {n:5,name:"DAY OFF",type:"happy",tx:"Gain 1 happiness chip",corner:1},
+ {n:6,name:"Dinner Time",type:"cost",tx:"Groceries or eat out"},
+ {n:7,name:"Life Card",type:"life",tx:"Draw a card"},
+ {n:8,name:"Friend Gives You a Ride",type:"move",tx:"Move to space 11"},
+ {n:9,name:"STORE",type:"store",tx:"Draw 3, buy 1 or none",corner:1},
+ {n:10,name:"Life Card",type:"life",tx:"Draw a card"},
+ {n:11,name:"Life Card",type:"life",tx:"Draw a card"},
+ {n:12,name:"Sick Day",type:"turn",tx:"Lose a turn"},
+ {n:13,name:"OVERSLEPT",type:"turn",tx:"Lose a turn",corner:1},
+ {n:14,name:"Life Card",type:"life",tx:"Draw a card"},
+ {n:15,name:"Overtime!",type:"move",tx:"Move to Bonus"},
+ {n:16,name:"Life Card",type:"life",tx:"Draw a card"}
+];
+const POS=[];
+for(let c=1;c<=5;c++)POS.push([1,c]);
+for(let r=2;r<=5;r++)POS.push([r,5]);
+for(let c=4;c>=1;c--)POS.push([5,c]);
+for(let r=4;r>=2;r--)POS.push([r,1]);
+
+const PAYCHECK=500,RENT=400,BONUS=200,START_MONEY=300;
+const TRANS={walk:{name:"Walk",bonus:0,cost:0,bill:0},bike:{name:"Bike",bonus:2,cost:150,bill:0},bus:{name:"Bus Pass",bonus:3,cost:100,bill:10},car:{name:"Car",bonus:4,cost:500,bill:40}};
+const STORE=[
+ {id:"phone",name:"Phone Case",cost:25,tx:"Broken phone? Pay $0."},
+ {id:"dcase",name:"Designer Phone Case",cost:150,hap:1,tx:"Broken phone? Pay $0. Looks amazing! Gain 1 happiness chip now."},
+ {id:"alarm",name:"Alarm Clock",cost:15,tx:"Land on Overslept? Don't lose a turn."},
+ {id:"speaker",name:"Smart Speaker Alarm",cost:100,tx:"Land on Overslept? Don't lose a turn. Plays music too!"},
+ {id:"health",name:"Health Insurance",cost:50,tx:"Doctor visit? Pay $0. Sick Day? Don't lose a turn."},
+ {id:"carins",name:"Car Insurance",cost:100,tx:"Car Accident or Car Trouble? Pay $0."},
+ {id:"tvwar",name:"TV Warranty",cost:100,tx:"If your TV breaks, it gets fixed for free."},
+ {id:"coupon",name:"Coupon Book",cost:20,tx:"At Dinner Time, groceries cost $25 instead of $75."},
+ {id:"umbrella",name:"Umbrella & Rain Jacket",cost:30,tx:"Rainy Day? Don't lose a happiness chip."},
+ {id:"jar",name:"Emergency Fund Jar",cost:50,tx:"Skip one surprise cost. Then it's used up."},
+ {id:"stream",name:"Streaming Overload",cost:0,bill:25,hap:1,tx:"5 streaming services, but you only watch one. Gain 1 happiness chip now."},
+ {id:"mbox",name:"Monthly Mystery Box",cost:0,bill:25,hap:1,tx:"The first box was fun. The rest is stuff you don't need. Gain 1 happiness chip now."},
+ {id:"rto",name:"Rent-to-Own TV",cost:50,bill:40,hap:2,tx:"A big new TV! Gain 2 happiness chips now."},
+ {id:"energy",name:"Energy Drink Habit",cost:0,bill:15,hap:1,tx:"One energy drink a day. It doesn't seem like much. Gain 1 happiness chip now."},
+ {id:"delivery",name:"Food Delivery",cost:75,hap:1,tx:"Dinner brought right to your door, plus fees and a tip. Gain 1 happiness chip."},
+ {id:"toy",name:"Viral Collectible Toy",cost:100,hap:1,tx:"Everyone online has one! Gain 1 happiness chip."},
+ {id:"gadget",name:"TikTok Gadget",cost:75,hap:1,tx:"It looked amazing in the video. Gain 1 happiness chip."},
+ {id:"skincare",name:"Skincare Haul",cost:100,hap:1,tx:"Ten new products you saw online. Gain 1 happiness chip."},
+ {id:"shoes",name:"Designer Shoes",cost:200,hap:1,tx:"They look great. Gain 1 happiness chip."},
+ {id:"newphone",name:"Newest Phone",cost:250,hap:1,tx:"Your old phone still works, but this one is new! Gain 1 happiness chip."},
+ {id:"coins",name:"In-Game Coins",cost:75,hap:1,tx:"New skins and items for your favorite game. Gain 1 happiness chip."}
+];
+const STOREBY=Object.fromEntries(STORE.map(s=>[s.id,s]));
+const LIFE=[
+ ["fun","Free Concert","Free concert in the park! Go with friends?",0,1,1],
+ ["fun","School Dance","Your friends invite you to the school dance. Pay $20 to go?",20,3,2],
+ ["fun","Picnic","Picnic with friends! Pay $10 for snacks?",10,2,2],
+ ["fun","Mini Golf","Go mini golfing with friends? Pay $15.",15,2,2],
+ ["fun","Hike","Go on a hike with friends? It's free.",0,2,1],
+ ["fun","Birthday Party","A friend's birthday party! Pay $20 for a gift?",20,2,2],
+ ["fun","Bowling Night","Bowling night with friends? Pay $25.",25,2,2],
+ ["fun","Movie Night","See a movie with friends? Pay $30.",30,2,2],
+ ["fun","Pizza Night","Pizza night with friends? Pay $30.",30,2,2],
+ ["fun","Amusement Park","Your friends invite you to an amusement park. Pay $100 to go?",100,4,2],
+ ["fun","Concert with Friends","Go to a concert with friends? Pay $50 for lawn seats.",50,2,2],
+ ["cost","Broken Phone","You broke your phone screen. Pay $100 to fix it.",100,0,5,{prot:["phone","dcase"]}],
+ ["cost","Doctor Visit","You got sick and went to the doctor. Pay $200.",200,0,5,{prot:["health"]}],
+ ["cost","Car Accident","Car owners pay $300. Everyone else: nothing happens.",300,0,2,{car:1,prot:["carins"]}],
+ ["cost","Car Trouble","Car owners pay $100 for repairs. Everyone else: nothing happens.",100,0,2,{car:1,prot:["carins"]}],
+ ["cost","Lost Wallet","You lost your wallet. Pay $40.",40,0,1,{}],
+ ["cost","Parking Ticket","Car owners pay $50. Everyone else: nothing happens.",50,0,1,{car:1}],
+ ["bad","Stressful Week","Stressful week at work. Lose 1 happiness chip.",0,-1,1],
+ ["bad","Argued with a Friend","You argued with a friend. Lose 1 happiness chip.",0,-1,1],
+ ["bad","Bored Weekend","You were bored all weekend. Lose 1 happiness chip.",0,-1,1],
+ ["rain","Rainy Day","Walkers and bikers lose 1 happiness chip.",0,-1,3],
+ ["sun","Sunny Day","Walkers and bikers gain 1 happiness chip!",0,1,1],
+ ["gain","Found Money","You found $20 on the sidewalk!",20,0,1],
+ ["gain","Birthday Money","Birthday money from Grandma! Collect $50.",50,0,1],
+ ["gain","Sold Old Clothes","You sold old clothes online. Collect $40.",40,0,1],
+ ["gain","Tax Refund","Tax refund! Collect $75.",75,0,1],
+ ["gain","Work Bonus","Great work! Your boss gives you a $100 bonus.",100,0,1],
+ ["freehap","Hang Out","A friend calls to hang out. Gain 1 happiness chip (free!).",0,1,1],
+ ["freehap","Holiday Party","Holiday party at work! Gain 1 happiness chip (free!).",0,1,1]
+];
+const KINDSTYLE={fun:["life","Fun Choice"],cost:["cost","Surprise Cost"],bad:["turn","Bad Day"],rain:["happy","Weather"],sun:["happy","Weather"],gain:["payday","Good Surprise"],freehap:["payday","Good Surprise"]};
+const STYLES={
+ smart:{fun:(c,h)=>c===0||h/c*100>=5,out:false,buys:["alarm","health","phone","coupon","jar","umbrella"],goal:"bus"},
+ spender:{fun:()=>true,out:true,buys:["carins","delivery","gadget","coins","toy","skincare","energy","stream","mbox","dcase","shoes","newphone","rto","speaker","tvwar"],goal:"car"},
+ mixed:{fun:(c)=>c<=100,out:false,buys:["phone","delivery","alarm","coins","health","stream","gadget"],goal:"bike"}
+};
+// computer players get 4 different names picked at random from this list
+const NAME_POOL=["Amelia","Vincent","Rico","Natalia","Stella","Sam","Luca"];
+const pickNames=()=>[...NAME_POOL].sort(()=>Math.random()-.5).slice(0,4);
+let CPU_NAMES=pickNames();
+const SEAT_DEF=["human","cpu","cpu","off"];
+
+let G=null, token=0;
+const $=id=>document.getElementById(id);
+const S=k=>`--c:var(--${k});--t:var(--tint-${k})`;
+const fmt=n=>(n<0?"−$":"$")+Math.abs(n);
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+
+/* ---------- sound effects (made in code, no files needed) ---------- */
+const SFX={ctx:null,on:true};
+try{SFX.on=localStorage.getItem("paydaySound")!=="off"}catch(e){}
+function audio(){
+  if(!SFX.on)return null;
+  try{if(!SFX.ctx){const A=window.AudioContext||window.webkitAudioContext;if(!A)return null;SFX.ctx=new A()}
+    if(SFX.ctx.state==="suspended")SFX.ctx.resume();return SFX.ctx}catch(e){return null}
+}
+function tone(freq,dur,{type="sine",vol=.15,at=0,slide=0}={}){
+  const c=audio();if(!c)return;const t=c.currentTime+at;
+  const o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.setValueAtTime(freq,t);
+  if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(40,freq*slide),t+dur);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g).connect(c.destination);o.start(t);o.stop(t+dur+.03);
+}
+function noise(dur,{vol=.12,at=0,freq=2000}={}){
+  const c=audio();if(!c)return;const t=c.currentTime+at;
+  const b=c.createBuffer(1,Math.max(1,Math.floor(c.sampleRate*dur)),c.sampleRate),d=b.getChannelData(0);
+  for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length);
+  const s=c.createBufferSource();s.buffer=b;const f=c.createBiquadFilter();f.type="bandpass";f.frequency.value=freq;
+  const g=c.createGain();g.gain.value=vol;s.connect(f).connect(g).connect(c.destination);s.start(t);
+}
+const sfx={
+  dice(){for(let i=0;i<7;i++)noise(.05,{at:i*.075,freq:1500+Math.random()*1800,vol:.35})},
+  step(){tone(620+Math.random()*80,.06,{type:"triangle",vol:.07})},
+  cash(){tone(1318,.07,{type:"square",vol:.05});tone(1760,.28,{type:"square",vol:.05,at:.07})},
+  payday(){[523,659,784,1047].forEach((f,i)=>tone(f,.2,{type:"triangle",vol:.12,at:i*.08}))},
+  pay(){tone(500,.14,{type:"triangle",vol:.09,slide:.65})},
+  chip(){[880,1175,1568].forEach((f,i)=>tone(f,.16,{vol:.1,at:i*.06}))},
+  sad(){tone(330,.22,{type:"triangle",vol:.1,slide:.75})},
+  lose(){tone(392,.25,{type:"sawtooth",vol:.05,slide:.85});tone(294,.45,{type:"sawtooth",vol:.05,at:.26,slide:.7})},
+  card(){noise(.14,{freq:3800,vol:.2})},
+  store(){tone(988,.14,{vol:.12});tone(1319,.32,{vol:.12,at:.12})},
+  loan(){tone(440,.16,{type:"square",vol:.06});tone(330,.2,{type:"square",vol:.06,at:.18});tone(247,.45,{type:"square",vol:.06,at:.4,slide:.8});noise(.08,{freq:700,vol:.35,at:.85})},
+  protect(){tone(659,.1,{type:"triangle",vol:.11});tone(988,.24,{type:"triangle",vol:.11,at:.09})},
+  month(){tone(784,.12,{type:"triangle",vol:.1});tone(1047,.22,{type:"triangle",vol:.1,at:.12})},
+  click(){tone(1200,.03,{type:"square",vol:.035})},
+  tick(){tone(900,.04,{type:"triangle",vol:.06})},
+  select(){tone(784,.09,{type:"triangle",vol:.12});tone(1175,.22,{type:"triangle",vol:.12,at:.08})},
+  land(){tone(330,.08,{type:"triangle",vol:.07,slide:.85});tone(260,.12,{type:"triangle",vol:.05,at:.07,slide:.85})},
+  turn(){tone(587,.1,{type:"triangle",vol:.08});tone(880,.16,{type:"triangle",vol:.08,at:.09})},
+  landing(){tone(523,.09,{type:"triangle",vol:.09});tone(784,.16,{type:"triangle",vol:.09,at:.07})},
+  whoosh(){noise(.22,{freq:1800,vol:.12});tone(500,.2,{type:"sine",vol:.04,slide:1.8})},
+  drumroll(){for(let i=0;i<22;i++)noise(.04,{at:i*.055,freq:400,vol:.4})},
+  fanfare(){[523,659,784,1047,784,1047].forEach((f,i)=>tone(f,i===5?.7:.16,{type:"triangle",vol:.13,at:i*.14}))}
+};
+function setSound(on){
+  SFX.on=on;try{localStorage.setItem("paydaySound",on?"on":"off")}catch(e){}
+  const b=document.getElementById("soundBtn");b.textContent=on?"Sound: on":"Sound: off";b.setAttribute("aria-pressed",String(on));
+}
+
+/* ---------- animation helpers ---------- */
+// animations stay on unless the player turns them off with the Animations button
+const reduced=()=>document.documentElement.classList.contains("no-anim");
+function setAnim(on){
+  document.documentElement.classList.toggle("no-anim",!on);try{localStorage.setItem("paydayAnim",on?"on":"off")}catch(e){}
+  const b=document.getElementById("animBtn");if(b){b.textContent=on?"Animations: on":"Animations: off";b.setAttribute("aria-pressed",String(on))}
+}
+const fxLayer=document.createElement("div");fxLayer.id="fx";document.body.appendChild(fxLayer);
+function floater(i,text,cls,slot=0){
+  const el=document.querySelector(`#players .pl[data-i="${i}"]`);if(!el)return;
+  const r=el.getBoundingClientRect();if(r.bottom<0||r.top>innerHeight)return;
+  const f=document.createElement("div");f.className="floater "+cls;f.textContent=text;
+  f.style.left=(r.left+r.width/2)+"px";f.style.top=(r.top+18+slot*28)+"px";f.style.animationDelay=(slot*.15)+"s";
+  fxLayer.appendChild(f);setTimeout(()=>f.remove(),1800);
+}
+function burst(el){
+  if(!el||reduced())return;const r=el.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+  for(let i=0;i<14;i++){
+    const c=document.createElement("div");c.className="coin";const a=Math.random()*Math.PI*2,d=40+Math.random()*60;
+    c.style.left=cx+"px";c.style.top=cy+"px";c.style.setProperty("--dx",Math.cos(a)*d+"px");c.style.setProperty("--dy",Math.sin(a)*d+"px");
+    fxLayer.appendChild(c);setTimeout(()=>c.remove(),1000);
+  }
+}
+async function banner(title,sub,color){
+  const el=document.createElement("div");el.className="banner";if(color)el.style.setProperty("--bc",`var(--${color})`);
+  el.innerHTML=`<b>${title}</b>${sub?`<span>${sub}</span>`:""}`;document.body.appendChild(el);
+  try{await wait(stepMode()?1400:Math.max(700,1400*Math.min(1,parseFloat($("speed").value))))}finally{el.remove()}
+}
+function confetti(){
+  if(reduced())return;const cv=document.createElement("canvas");cv.className="confetti";document.body.appendChild(cv);
+  const dpr=window.devicePixelRatio||1;cv.width=innerWidth*dpr;cv.height=innerHeight*dpr;const ctx=cv.getContext("2d");ctx.scale(dpr,dpr);
+  const cs=getComputedStyle(document.documentElement),cols=["--p1","--p2","--p3","--p4","--payday"].map(v=>cs.getPropertyValue(v).trim()||"#e0a21b");
+  const parts=Array.from({length:150},()=>({x:Math.random()*innerWidth,y:-Math.random()*innerHeight*.6,vx:(Math.random()-.5)*2,vy:2+Math.random()*3,r:Math.random()*6,vr:(Math.random()-.5)*.3,w:6+Math.random()*6,h:8+Math.random()*8,c:cols[Math.floor(Math.random()*cols.length)]}));
+  const start=performance.now();
+  (function frame(t){
+    ctx.clearRect(0,0,innerWidth,innerHeight);
+    parts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.r);ctx.fillStyle=p.c;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore()});
+    if(t-start<3500)requestAnimationFrame(frame);else cv.remove();
+  })(start);
+}
+const PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+const dieHTML=n=>Array.from({length:9},(_,i)=>`<i class="${(PIPS[n]||[]).includes(i)?"on":""}"></i>`).join("");
+// big dice tray over the middle of the board: tumble, land, then show the math
+// tap: a real player's turn shows pulsing dice they tap to roll
+async function rollDice(p,d1,d2,bonus,tap){
+  const tot=d1+d2+bonus,center=document.querySelector(".board .center");
+  const tray=document.createElement("div");tray.className="dicetray";tray.style.setProperty("--pc",`var(${p.col})`);
+  const faces=[1,2,3,4,5,6].map(n=>`<div class="face f${n}">${dieHTML(n)}</div>`).join("");
+  tray.innerHTML=`<div class="who2">${tap?`${p.name}'s turn!`:`${p.name} rolls!`}</div><button type="button" class="dicebtn${tap?" ready":""}" aria-label="Roll the dice"${tap?"":' tabindex="-1"'}><div class="drow">${[0,1].map(i=>`<div class="dieroll" style="--dx:${i?-260:-190}px"><div class="dshadow"></div><div class="cube">${faces}</div></div>`).join("")}</div></button><div class="sum">${tap?'<span class="hint">Tap the dice to roll!</span>':""}</div>`;
+  center.appendChild(tray);
+  const rolls=[...tray.querySelectorAll(".dieroll")],cubes=[...tray.querySelectorAll(".cube")],sum=tray.querySelector(".sum");
+  // rotation that brings each number to the front of the cube
+  const FACE={1:[0,0],2:[0,-90],3:[-90,0],4:[90,0],5:[0,90],6:[0,180]};
+  const dur=reduced()?0:Math.round(1500*Math.min(1.2,Math.max(.75,spd())));
+  try{
+    if(tap){
+      const chk=abortable(),btn=tray.querySelector(".dicebtn");
+      cubes.forEach((c,i)=>{c.style.transition="none";c.style.transform=`rotateX(-22deg) rotateY(${i?40:30}deg) rotateZ(0deg)`});
+      if(innerWidth<900)center.scrollIntoView({block:"center",behavior:reduced()?"auto":"smooth"});
+      btn.focus({preventScroll:true});
+      await new Promise(res=>{const go=e=>{if(e)e.stopPropagation();try{chk()}catch(err){return}res()};btn.onclick=go;tray.onclick=go});
+      btn.classList.remove("ready");sum.innerHTML="";tray.querySelector(".who2").textContent=`${p.name} rolls!`;
+    }
+    cubes.forEach((c,i)=>{
+      const [bx,by]=FACE[i?d2:d1];
+      c.style.transition="none";
+      if(!dur){c.style.transform=`rotateX(${bx}deg) rotateY(${by}deg) rotateZ(0deg)`;return}
+      c.style.transform=`rotateX(${Math.round(Math.random()*360)}deg) rotateY(${Math.round(Math.random()*360)}deg) rotateZ(0deg)`;
+      void c.offsetWidth;
+      const spins=()=>360*(2+Math.floor(Math.random()*2))*(Math.random()<.5?-1:1);
+      c.style.transition=`transform ${dur}ms cubic-bezier(.12,.6,.25,1) ${i*80}ms`;
+      c.style.transform=`rotateX(${bx+spins()}deg) rotateY(${by+spins()}deg) rotateZ(${Math.random()<.5?360:-360}deg)`;
+    });
+    if(dur){
+      rolls.forEach(r=>{r.style.animationDuration=dur+"ms";r.classList.add("go")});
+      // soft wooden clacks that slow down and get quieter, like dice settling on a table
+      [0,.15,.3,.43,.54,.63,.7].forEach((f,i,a)=>{const at=f*dur/1000,v=.12*(1-i/a.length)+.025;tone(380+Math.random()*160,.045,{type:"triangle",vol:v,at,slide:.85});noise(.015,{at,freq:1100+Math.random()*300,vol:v*.5})});
+      await wait(dur+150);
+    }
+    sfx.land();
+    const dice=$("dice");dice.children[0].innerHTML=dieHTML(d1);dice.children[1].innerHTML=dieHTML(d2);
+    await wait(400);
+    sum.innerHTML=`${d1} + ${d2}${bonus?` + ${bonus}`:""} = ${tot}<small>${bonus?`${TRANS[p.trans].name} adds +${bonus}`:"Walking adds nothing"} · move ${tot} spaces</small>`;
+    await wait((p.human?1300:1700)*spd());
+  }finally{tray.remove()}
+}
+// compare each player's money, chips and loans with the last screen update; show floaters and play sounds
+function fxDiff(){
+  if(!G||!G.prev)return;const s={};
+  G.players.forEach((p,i)=>{
+    const pr=G.prev[i],dm=p.money-pr.m,dc=p.chips-pr.c,dl=p.loans-pr.l;let slot=0;
+    if(dl>0){floater(i,`Loan +$${dl*100}`,"loan",slot++);s.loan=1}
+    if(dm){floater(i,(dm>0?"+$":"−$")+Math.abs(dm),dm>0?"up":"down",slot++);if(dm>0)s.cash=1;else s.pay=1}
+    if(dc){floater(i,(dc>0?"+":"−")+Math.abs(dc)+" happiness","chip",slot++);if(dc>0)s.chip=1;else s.sad=1}
+    G.prev[i]={m:p.money,c:p.chips,l:p.loans};
+  });
+  if(s.loan){}else if(s.cash)sfx.cash();else if(s.pay)sfx.pay();
+  if(s.chip)sfx.chip();if(s.sad)sfx.sad();
+}
+
+function abortable(){const t=token;return()=>{if(t!==token)throw "abort"}}
+function wait(ms){const chk=abortable();return new Promise(r=>setTimeout(r,ms)).then(()=>chk())}
+const stepMode=()=>$("speed").value==="step";
+const spd=()=>stepMode()?1:parseFloat($("speed").value);
+function cpuWait(base=700){return wait(stepMode()?Math.min(base,300):base*parseFloat($("speed").value))}
+// show what a computer player sees and decides; waits for a click in step mode
+function decisionBox(p,text,sub){return text?`<div class="decision" style="--pc:var(${p.col})">${text}${sub?`<small>${sub}</small>`:""}</div>`:""}
+async function cpuShow(p,content,decision,sub){
+  const chk=abortable();
+  const body=header(p)+content+decisionBox(p,decision,sub);
+  if(stepMode()){
+    await new Promise(res=>{setAction(body+`<div class="choices"><button type="button" class="btn" id="cont">Continue</button></div>`);const b=$("cont");b.onclick=()=>{try{chk()}catch(e){return}res()};b.focus({preventScroll:true})});
+  }else{setAction(body);await wait(1900*spd())}
+}
+const fb=h=>`<div class="fakebtn">${h}</div>`;
+// computer decision: show the options, "think" by scanning across them, then circle the one it picks
+async function cpuChoose(p,content,opts,pick,decision,sub,{btns=false,stamp="Picks"}={}){
+  const chk=abortable();
+  setAction(header(p)+content+`<div class="cpu-opts${btns?" btns":""}" style="--pc:var(${p.col})">${opts.map(h=>`<div class="opt">${h}</div>`).join("")}</div><p class="thinking" id="thinking">${p.name} is thinking</p>`);
+  const els=[...$("action").querySelectorAll(".opt")];
+  await wait(1400*spd());
+  if(!reduced()){
+    const steps=els.length+pick+1;
+    for(let s=0;s<steps;s++){els.forEach(e=>e.classList.remove("scan"));els[s%els.length].classList.add("scan");sfx.tick();await wait(320*spd())}
+    await wait(250*spd());
+  }
+  els.forEach((e,i)=>{e.classList.remove("scan");e.classList.add(i===pick?"picked":"notpicked")});
+  els[pick].insertAdjacentHTML("beforeend",`<svg class="ring" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><ellipse cx="50" cy="50" rx="49" ry="48"/></svg><span class="stamp">${stamp}</span>`);
+  sfx.select();
+  await wait(800*spd());
+  const th=$("thinking");if(th)th.outerHTML=decisionBox(p,decision,sub);
+  const ap=$("action");ap.scrollTo({top:ap.scrollHeight,behavior:reduced()?"auto":"smooth"});
+  if(stepMode()){
+    await new Promise(res=>{$("action").insertAdjacentHTML("beforeend",`<div class="choices"><button type="button" class="btn" id="cont">Continue</button></div>`);ap.scrollTop=ap.scrollHeight;const b=$("cont");b.onclick=()=>{try{chk()}catch(e){return}sfx.click();res()};b.focus({preventScroll:true})});
+  }else await wait(1900*spd());
+}
+
+/* ---------- board ---------- */
+function buildBoard(){
+  const b=$("board");b.innerHTML="";
+  SPACES.forEach((s,i)=>{
+    const d=document.createElement("div");
+    d.className="sp"+(s.corner?" corner":"");d.id="sp"+s.n;
+    d.style.cssText=S(s.type)+`;grid-row:${POS[i][0]};grid-column:${POS[i][1]}`;
+    d.innerHTML=`<span class="n">${s.n}</span>${ico(SPACE_ICON[s.n]||(s.type==="life"?"life":""))}<span class="nm">${s.name}</span><span class="tx">${s.tx}</span><div class="tokens" id="tk${s.n}"></div>`;
+    b.appendChild(d);
+  });
+  const c=document.createElement("div");c.className="center";
+  c.innerHTML=`<div class="logo">${LOGO_ART}<h2>Worth It<span class="q">?</span></h2><div class="tag">Spend smart. Have fun. Make it last.</div></div><div class="months" id="months"></div><div class="dice" id="dice"><div class="die">${dieHTML(1)}</div><div class="die">${dieHTML(1)}</div><span id="diceTxt" class="small"></span></div><div class="small">Paycheck $500 at the start of each month<br>Rent $400 + bills at the end</div>`;
+  b.appendChild(c);
+}
+function render(){
+  if(!G)return;
+  SPACES.forEach(s=>{$("tk"+s.n).innerHTML="";$("sp"+s.n).classList.remove("hl")});
+  G.players.forEach((p,i)=>{$("tk"+p.pos).insertAdjacentHTML("beforeend",`<span class="tok${G.hop===i?" hop":""}" style="--pc:var(${p.col})" title="${p.name}">${p.name[0]}</span>`)});
+  const cur=G.players[G.cur];if(cur)$("sp"+cur.pos).classList.add("hl");
+  $("months").innerHTML=MONTHS.slice(0,G.len).map((m,i)=>`<span class="${i<G.month?"done":i===G.month?"now":""}">${m.slice(0,3)}</span>`).join("");
+  $("monthLabel").innerHTML=G.month<G.len?`${MONTHS[G.month]} <span>· month ${G.month+1} of ${G.len}</span>`:"Game over";
+  $("players").innerHTML=G.players.map((p,i)=>{
+    const bills=billTotal(p);
+    const items=[...p.cards].map(id=>{const st=STOREBY[id],paid=(p.subPaid||{})[st.name]||0;return `<span class="${st.bill?"b":""}">${st.name}${st.bill?` \u00b7 ${fmt(st.cost+paid)} so far`:""}</span>`}).join("");
+    return `<div class="pl ${i===G.cur&&!G.over?"active":""}${G.flash&&G.flash.i===i&&Date.now()<G.flash.until?" loanflash":""}" data-i="${i}" style="--pc:var(${p.col})">
+      <div class="nm"><span class="tok" style="--pc:var(${p.col})">${p.name[0]}</span>${p.name}${p.human?"":" <span class='small'>cpu</span>"}</div>
+      <div class="big">${fmt(p.money)}</div>
+      <div class="row"><span>Happiness</span><b>${p.chips}</b></div>
+      <div class="row"><span>Ride</span><b>${ico(p.trans,"ri")}${TRANS[p.trans].name} +${TRANS[p.trans].bonus}</b></div>
+      <div class="row"><span>Bills/month</span><b>${fmt(RENT+bills)}</b></div>
+      ${p.loans?`<div class="row"><span>Loans</span><b>${p.loans} (owe ${fmt(p.loans*150)})</b></div>`:""}
+      ${p.skip?`<div class="row"><span>Next turn</span><b>Lost</b></div>`:""}
+      ${items?`<div class="items">${items}</div>`:""}
+    </div>`}).join("");
+  fxDiff();
+}
+function log(msg,p){
+  const d=document.createElement("div");
+  if(p)d.style.setProperty("--pc",`var(${p.col})`);else d.className="sys";
+  d.textContent=msg;$("log").prepend(d);
+  while($("log").children.length>120)$("log").lastChild.remove();
+}
+
+/* ---------- action panel ---------- */
+function setAction(html){$("action").innerHTML=html}
+function header(p,extra=""){return `<div class="who"><span class="tok" style="--pc:var(${p.col})">${p.name[0]}</span>${p.name}'s turn${p.human?"":" <span class='small'>(computer)</span>"}</div>${extra}`}
+function bigCard(kind,label,title,text,pills="",icon=""){
+  return `<div class="bigcard" style="${S(kind)}"><div class="top"><span>${label}</span>${sayBtn(speakable(label,title,text,pills))}</div><div class="bd">${ico(icon,"bi")}<div class="tt">${title}</div><div>${text}</div>${pills?`<div class="pills">${pills}</div>`:""}</div></div>`;
+}
+// ask the human: options [{label,value,disabled,alt}] ; returns value
+function ask(p,content,options,cards){
+  const chk=abortable();
+  return new Promise(res=>{
+    let h=header(p)+content;
+    if(cards)h+=`<div class="cardgrid">${cards.map((c,i)=>`<div class="cardwrap" style="${S(c.kind||"store")}"><button type="button" class="mini${c.skip?" skip":""}" data-c="${i}" ${c.disabled?"disabled":""} style="${S(c.kind||"store")}"><div class="top"><span>${c.label}</span><b>${c.right||""}</b></div><div class="bd">${ico(c.icon,"mi")}<div class="tt">${c.title}</div><div class="tx">${c.text}</div>${c.pills?`<div class="pills">${c.pills}</div>`:""}${c.why?`<div class="why">${c.why}</div>`:""}</div></button>${sayBtn(speakable(c.title,c.text,c.pills))}</div>`).join("")}</div>`;
+    h+=`<div class="choices">${options.map((o,i)=>`<button type="button" class="btn ${o.alt?"alt":""}" data-o="${i}" ${o.disabled?"disabled":""}>${o.label}</button>`).join("")}</div>`;
+    setAction(h);
+    if(innerWidth<900){const r=$("action").getBoundingClientRect();if(r.top<0||r.bottom>innerHeight)$("action").scrollIntoView({block:"nearest",behavior:reduced()?"auto":"smooth"})}
+    $("action").querySelectorAll("[data-o]").forEach(b=>b.onclick=()=>{try{chk()}catch(e){return}sfx.click();res(options[+b.dataset.o].value)});
+    $("action").querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{try{chk()}catch(e){return}sfx.click();res(cards[+b.dataset.c].value)});
+    const first=$("action").querySelector("button:not([disabled]):not(.saybtn)");if(first)first.focus({preventScroll:true});
+  });
+}
+async function note(p,content){
+  if(p.human) await ask(p,content,[{label:"OK",value:1}]);
+  else await cpuShow(p,content);
+}
+
+/* ---------- money ---------- */
+function billTotal(p){let t=TRANS[p.trans].bill;p.cards.forEach(id=>t+=STOREBY[id].bill||0);return t}
+// spending tracker for the end-of-game recap
+const SMART_IDS=new Set(["phone","alarm","health","carins","coupon","umbrella","jar"]);
+function track(p,cat,amt,name,chips=0){
+  p.spent=p.spent||{};p.deals=p.deals||{};
+  p.spent[cat]=(p.spent[cat]||0)+amt;
+  if(cat==="fun"||cat==="stuff"){const d=p.deals[name]||(p.deals[name]={cost:0,chips:0});d.cost+=amt;d.chips+=chips}
+}
+function pay(p,amt,why,cat,chips=0){
+  if(cat)track(p,cat,amt,why,chips);
+  p.money-=amt;log(`${p.name} pays ${fmt(amt)} for ${why}.`,p);
+  let took=0;
+  while(p.money<0){p.money+=100;p.loans++;took++;log(`${p.name} can't pay, so they take a Loan card (+$100, pay back $150 at the end).`,p)}
+  if(took)loanFX(p,took);
+  render();
+}
+// take as many Loan cards as needed to get back to $0 or more
+function coverLoans(p){let took=0;while(p.money<0){p.money+=100;p.loans++;took++}if(took){log(`${p.name} borrows ${fmt(100*took)} (${took} Loan card${took>1?"s":""}, pay back ${fmt(150*took)} at the end).`,p);loanFX(p,took)}}
+// players may borrow for anything; a human gets asked first when they can't afford a choice
+async function okLoan(p,amt,what){
+  if(p.money>=amt)return true;
+  const n=Math.ceil((amt-p.money)/100);
+  return await ask(p,`<p class="prompt"><b>Not enough money!</b> ${what} costs ${fmt(amt)}, and you have ${fmt(p.money)}.</p><p class="prompt">To buy it, take ${n} Loan card${n>1?"s":""}: get ${fmt(100*n)} now, pay back ${fmt(150*n)} at the end.</p>`,[{label:"No thanks",value:false},{label:`Borrow ${fmt(100*n)}`,value:true,alt:1}]);
+}
+const needLoan=(p,amt)=>p.money<amt?" (needs a loan)":"";
+async function surprise(p,amt,why){
+  if(p.cards.has("jar")){
+    let use;
+    if(p.human) use=await ask(p,`<p class="prompt">${why}: ${fmt(amt)}. Use your Emergency Fund Jar to skip it?</p>`,[{label:"Use the jar",value:true},{label:"Pay it",value:false,alt:1}]);
+    else{use=amt>=100;await cpuChoose(p,`<p class="prompt">${why}: ${fmt(amt)}. Use the Emergency Fund Jar?</p>`,[fb("Use the jar"),fb(`Pay ${fmt(amt)}`)],use?0:1,use?`${p.name} uses the Emergency Fund Jar`:`${p.name} saves the jar for later`,use?"Skips the whole cost.":`Pays ${fmt(amt)}.`,{btns:true,stamp:use?"Use it":"Save it"})}
+    if(use){sfx.protect();p.cards.delete("jar");G.storePile.unshift("jar");log(`${p.name} uses the Emergency Fund Jar to skip ${why}.`,p);render();return}
+  }
+  pay(p,amt,why,"bills");
+}
+function gainChips(p,n,why){p.chips=Math.max(0,p.chips+n);log(`${p.name} ${n>0?"gains":"loses"} ${Math.abs(n)} happiness chip${Math.abs(n)>1?"s":""} (${why}).`,p);render()}
+
+/* ---------- shopping ---------- */
+function drawStore(){
+  if(G.storePile.length<3){const owned=G.players.flatMap(p=>[...p.cards]);G.storePile=shuffle(STORE.flatMap(s=>{const left=2-owned.filter(o=>o===s.id).length;return Array(Math.max(0,left)).fill(s.id)}))}
+  return [G.storePile.pop(),G.storePile.pop(),G.storePile.pop()].filter(Boolean);
+}
+function storeCards(p,ids){
+  return ids.map(id=>STOREBY[id]).map(s=>{
+    const own=p.cards.has(s.id), poor=p.money<s.cost;
+    let pills=(s.cost?`<span class="pill neg">${fmt(-s.cost)}</span>`:`<span class="pill">$0 today</span>`)+(s.hap?`<span class="pill hap">+${s.hap} happiness</span>`:"")+(s.bill?`<span class="pill bill">−$${s.bill} every month</span>`:"");
+    return {label:"Store",icon:STORE_ICON[s.id],right:s.cost?"$"+s.cost:"$0",title:s.name,text:s.tx,pills,disabled:own,why:own?"You have this":poor?"Needs a loan":"",value:s.id};
+  });
+}
+function buyStore(p,id){
+  const s=STOREBY[id];p.cards.add(id);if(s.cost){p.money-=s.cost;coverLoans(p)}track(p,SMART_IDS.has(id)?"smart":"stuff",s.cost,s.name,s.hap||0);
+  log(`${p.name} buys ${s.name}${s.cost?" for "+fmt(s.cost):""}${s.bill?` (pays ${fmt(s.bill)} every month)`:""}.`,p);
+  if(s.hap)gainChips(p,s.hap,s.name);
+  render();
+}
+async function shopStore(p){
+  const ids=drawStore();let pick=null;sfx.store();
+  await flyCards($("sp9"),ids.length,"store");
+  log(`${p.name} visits the Store and draws ${ids.map(i=>STOREBY[i].name).join(", ")}.`,p);
+  if(p.human){
+    pick=await ask(p,`<p class="prompt"><b>Store:</b> you drew ${ids.length} cards. Buy one or none. You have ${fmt(p.money)}.</p>`,[],
+      [...storeCards(p,ids),{kind:"store",skip:1,label:"Skip",icon:"payday",title:"Don't buy anything",text:"Keep your money.",value:null}]);
+    if(pick&&!await okLoan(p,STOREBY[pick].cost,STOREBY[pick].name))pick=null;
+  }else{
+    pick=STYLES[p.style].buys.find(id=>ids.includes(id)&&!p.cards.has(id)&&p.money-STOREBY[id].cost>=150)||null;
+    const cards=storeCards(p,ids).map(c=>`<div class="cardwrap" style="${S("store")}"><div class="mini" style="${S("store")}"><div class="top"><span>Store</span><b>${c.right}</b></div><div class="bd">${ico(c.icon,"mi")}<div class="tt">${c.title}</div><div class="tx">${c.text}</div><div class="pills">${c.pills}</div></div></div>${sayBtn(speakable(c.title,c.text,c.pills))}</div>`);
+    cards.push(`<div class="cardwrap" style="${S("store")}"><div class="mini skip" style="${S("store")}"><div class="top"><span>Skip</span><b></b></div><div class="bd">${ico("payday","mi")}<div class="tt">Don't buy anything</div><div class="tx">Keep the money.</div></div></div></div>`);
+    const s=pick&&STOREBY[pick];
+    await cpuChoose(p,`<p class="prompt"><b>Store:</b> ${p.name} drew ${ids.length} cards and has ${fmt(p.money)}.</p>`,cards,pick?ids.indexOf(pick):ids.length,
+      pick?`${p.name} buys ${s.name}`:`${p.name} doesn't buy anything`,
+      pick?[s.cost?`Pays ${fmt(s.cost)}`:"$0 today",s.hap?`gains ${s.hap} happiness chip${s.hap>1?"s":""}`:"",s.bill?`then ${fmt(s.bill)} every month`:""].filter(Boolean).join(", ")+".":"Keeps the money.",{stamp:pick?"Buys":"No thanks"});
+  }
+  if(pick){buyStore(p,pick);ids.splice(ids.indexOf(pick),1)}else log(`${p.name} doesn't buy anything.`,p);
+  G.storePile.unshift(...ids);
+}
+async function shopTransport(p){
+  if(p.human){
+    const cards=Object.entries(TRANS).filter(([k])=>k!=="walk").map(([k,t])=>({kind:"move",icon:k,label:"Transportation",right:"Move +"+t.bonus,title:t.name,
+      text:k==="bike"?"Rainy Day cards hurt bikers.":k==="bus"?"Pay $10 every month.":"Pay $40 for gas every month. Car cards only happen to car owners.",
+      pills:`<span class="pill neg">${fmt(-t.cost)}</span>${t.bill?`<span class="pill bill">−$${t.bill} every month</span>`:""}`,
+      disabled:k===p.trans,why:k===p.trans?"You have this":p.money<t.cost?"Needs a loan":"",value:k}));
+    let k=await ask(p,`<p class="prompt"><b>Transportation:</b> buy or switch? You have ${TRANS[p.trans].name} and ${fmt(p.money)}. Switching doesn't give money back.</p>`,[],
+      [...cards,{kind:"move",skip:1,label:"No change",icon:p.trans,title:`Keep ${TRANS[p.trans].name}`,text:"Don't buy anything right now.",value:null}]);
+    if(k&&!await okLoan(p,TRANS[k].cost,TRANS[k].name))k=null;
+    if(k){p.money-=TRANS[k].cost;coverLoans(p);track(p,"ride",TRANS[k].cost,TRANS[k].name);p.trans=k;log(`${p.name} buys ${TRANS[k].name} for ${fmt(TRANS[k].cost)}.`,p);render()}
+  }else{
+    const g=STYLES[p.style].goal;
+    if(p.trans!==g&&p.money-TRANS[g].cost>=250){
+      const old=TRANS[p.trans].name,keys=Object.keys(TRANS);
+      const opts=keys.map(k=>{const t=TRANS[k];return `<div class="cardwrap" style="${S("move")}"><div class="mini" style="${S("move")}"><div class="top"><span>${k===p.trans?"Has now":"Transportation"}</span><b>+${t.bonus}</b></div><div class="bd">${ico(k,"mi")}<div class="tt">${t.name}</div><div class="pills">${t.cost?`<span class="pill neg">${fmt(-t.cost)}</span>`:`<span class="pill">Free</span>`}${t.bill?`<span class="pill bill">−$${t.bill} every month</span>`:""}</div></div></div>${sayBtn(`${t.name}. Move plus ${t.bonus}. ${t.cost?`Costs $${t.cost}`:"Free"}${t.bill?`, then $${t.bill} every month`:""}.`)}</div>`});
+      await cpuChoose(p,`<p class="prompt"><b>Transportation</b> at the Bonus space. ${p.name} has ${old} and ${fmt(p.money)}.</p>`,opts,keys.indexOf(g),`${p.name} buys a ${TRANS[g].name}`,`Pays ${fmt(TRANS[g].cost)}. Now moves +${TRANS[g].bonus} each turn${TRANS[g].bill?` and pays ${fmt(TRANS[g].bill)} every month`:""}.`,{stamp:"Buys"});
+      p.money-=TRANS[g].cost;track(p,"ride",TRANS[g].cost,TRANS[g].name);p.trans=g;log(`${p.name} buys ${TRANS[g].name} for ${fmt(TRANS[g].cost)}.`,p);render();
+    }
+  }
+}
+// a loan is a big moment: a Loan card pops up over the board, then flies to the player's card, which shakes
+function loanFX(p,n){
+  sfx.loan();
+  const i=G.players.indexOf(p),center=document.querySelector(".board .center");
+  const cr=center?center.getBoundingClientRect():{left:innerWidth/2,top:innerHeight/2,width:0,height:0};
+  const box=document.createElement("div");box.className="loanpop";box.setAttribute("role","status");
+  box.style.left=(cr.left+cr.width/2)+"px";box.style.top=Math.min(Math.max(cr.top+cr.height/2,120),innerHeight-120)+"px";
+  box.innerHTML=`${ico("loan")}<div><b>${p.name} had to borrow!</b><span>Loan card: get ${fmt(100*n)} now, pay back ${fmt(150*n)} at the end.</span></div>`;
+  document.body.appendChild(box);
+  const flash=()=>{G&&(G.flash={i,until:Date.now()+800});render()};
+  setTimeout(()=>{
+    const pl=document.querySelector(`#players .pl[data-i="${i}"]`),br=box.getBoundingClientRect();
+    if(pl&&box.animate&&!reduced()){
+      const r=pl.getBoundingClientRect(),dx=r.left+r.width/2-(br.left+br.width/2),dy=r.top+r.height/2-(br.top+br.height/2);
+      const a=box.animate([{transform:"translate(-50%,-50%) scale(1)",opacity:1},{transform:`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(.25)`,opacity:.2}],{duration:600,easing:"cubic-bezier(.5,0,.7,1)",fill:"forwards"});
+      a.onfinish=()=>{box.remove();flash()};
+    }else{box.remove();flash()}
+  },2000);
+}
+// the corner space: a bonus and the chance to buy transportation
+async function payday(p){
+  p.money+=BONUS;log(`${p.name} reaches the Bonus space and collects ${fmt(BONUS)}.`,p);burst($("sp1"));render();
+  await note(p,`<p class="prompt"><b>Bonus!</b> Collect ${fmt(BONUS)}. Then you may buy transportation.</p>`);
+  await shopTransport(p);
+}
+function billList(p){
+  const bills=[["Rent",RENT]];if(TRANS[p.trans].bill)bills.push([TRANS[p.trans].name,TRANS[p.trans].bill]);
+  p.cards.forEach(id=>{if(STOREBY[id].bill)bills.push([STOREBY[id].name,STOREBY[id].bill])});
+  return bills;
+}
+// end of the month: each player pays rent and everything in their My Bills box, one line at a time
+async function billsDue(){
+  log(`End of ${MONTHS[G.month]}. Rent and bills are due.`);
+  sfx.lose();await banner("Bills are due!",`Rent ${fmt(RENT)} + My Bills`,"cost");
+  for(let i=0;i<G.players.length;i++){
+    const p=G.players[i],bills=billList(p),total=bills.reduce((a,b)=>a+b[1],0);
+    G.cur=i;render();
+    setAction(`<div class="who"><span class="tok" style="--pc:var(${p.col})">${p.name[0]}</span>${p.name}'s bills for ${MONTHS[G.month]}</div><table class="billtab">${bills.map(b=>`<tr><td>${b[0]}</td><td>${fmt(-b[1])}</td></tr>`).join("")}<tr class="tot"><td>Total</td><td>${fmt(-total)}</td></tr></table>`);
+    await wait(500*spd());
+    for(const b of bills){
+      const cat=b[0]==="Rent"?"bills":Object.values(TRANS).some(t=>t.name===b[0])?"ride":"stuff";
+      if(cat==="stuff"){p.subPaid=p.subPaid||{};p.subPaid[b[0]]=(p.subPaid[b[0]]||0)+b[1]}
+      pay(p,b[1],b[0],cat);await wait(380*spd());
+    }
+    await wait(900*spd());
+  }
+  G.cur=-1;render();
+}
+
+/* ---------- life cards ---------- */
+function buildDeck(){const d=[];LIFE.forEach(c=>{for(let i=0;i<c[5];i++)d.push(c)});return shuffle(d)}
+function drawCard(){if(!G.deck.length){G.deck=shuffle(G.discard);G.discard=[];log("The Life Card deck is reshuffled.")}const c=G.deck.pop();G.discard.push(c);return c}
+async function lifeCard(p){
+  await flyCards($("sp"+p.pos),1,"life");
+  const c=drawCard();const [kind,title,text,amt,hap,,opt={}]=c;const [sty,label]=KINDSTYLE[kind];
+  let pills="";
+  if(kind==="fun")pills=`${amt?`<span class="pill neg">${fmt(-amt)}</span>`:`<span class="pill">Free</span>`}<span class="pill hap">+${hap} happiness</span>`;
+  else if(kind==="cost")pills=`<span class="pill neg">${fmt(-amt)}</span>`;
+  else if(kind==="gain")pills=`<span class="pill pos">+$${amt}</span>`;
+  else pills=`<span class="pill hap">${hap>0?"+":"−"}${Math.abs(hap)} happiness</span>`;
+  const cardHTML=bigCard(sty,label,title,text,pills,LIFE_ICON[title]||KIND_ICON[kind]);
+  log(`${p.name} draws "${title}".`,p);sfx.card();
+  if(kind==="fun"){
+    let yes;
+    if(p.human) yes=await ask(p,cardHTML,[{label:amt?`Yes, pay ${fmt(amt)}${needLoan(p,amt)}`:"Yes, go!",value:true},{label:"No thanks",value:false,alt:1}]);
+    else{yes=STYLES[p.style].fun(amt,hap)&&(p.money-amt>=100||(p.style==="spender"&&Math.random()<.25));await cpuChoose(p,cardHTML,[fb(amt?`Yes, pay ${fmt(amt)}`:"Yes, go!"),fb("No thanks")],yes?0:1,yes?`${p.name} says YES`:`${p.name} says NO THANKS`,yes?`${amt?`Pays ${fmt(amt)} and `:""}gains ${hap} happiness chip${hap>1?"s":""}.`:"Keeps the money.",{btns:true,stamp:yes?"Yes!":"No"})}
+    if(yes&&p.human&&!await okLoan(p,amt,title))yes=false;
+    if(yes){track(p,"fun",amt,title,hap);if(amt)pay(p,amt,title);gainChips(p,hap,title)}else log(`${p.name} says no thanks.`,p);
+    return;
+  }
+  await note(p,cardHTML);
+  if(kind==="cost"){
+    if(opt.car&&p.trans!=="car"){log(`${p.name} doesn't have a car, so nothing happens.`,p);return}
+    const pr=(opt.prot||[]).find(id=>p.cards.has(id));
+    if(pr){sfx.protect();log(`${p.name}'s ${STOREBY[pr].name} protects them. They pay $0!`,p);return}
+    await surprise(p,amt,title);
+  }else if(kind==="bad")gainChips(p,-1,title);
+  else if(kind==="rain"){
+    if(p.trans!=="walk"&&p.trans!=="bike")log(`${p.name} isn't walking or biking, so nothing happens.`,p);
+    else if(p.cards.has("umbrella")){sfx.protect();log(`${p.name}'s Umbrella & Rain Jacket keeps them happy.`,p)}
+    else gainChips(p,-1,"Rainy Day");
+  }else if(kind==="sun"){
+    if(p.trans==="walk"||p.trans==="bike")gainChips(p,1,"Sunny Day");else log(`${p.name} isn't walking or biking, so nothing happens.`,p);
+  }else if(kind==="gain"){p.money+=amt;log(`${p.name} collects ${fmt(amt)}.`,p);render()}
+  else if(kind==="freehap")gainChips(p,1,title);
+}
+
+/* ---------- spaces & turns ---------- */
+// the space a player lands on pops and glows in its own color
+async function landFX(n){
+  const el=$("sp"+n);if(!el)return;sfx.landing();
+  if(reduced())return;
+  el.classList.remove("landing");void el.offsetWidth;el.classList.add("landing");
+  setTimeout(()=>el.classList.remove("landing"),1050);
+  await wait(Math.max(450,700*Math.min(1.3,spd())));
+}
+// face-down cards fly from a board space to the turn panel, then the real card flips in there
+async function flyCards(fromEl,n,kind){
+  if(reduced()||!fromEl)return;
+  const a=$("action").getBoundingClientRect();if(a.top>innerHeight-80||a.bottom<40)return;
+  const r=fromEl.getBoundingClientRect(),sx=r.left+r.width/2-46,sy=r.top+r.height/2-62;
+  const dur=Math.round(700*Math.min(1.3,Math.max(.7,spd()))),sty=kind==="store"?"store":"life";
+  sfx.whoosh();
+  const cards=[];
+  for(let i=0;i<n;i++){
+    const c=document.createElement("div");c.className="flycard";c.style.cssText=S(sty)+`;left:${sx}px;top:${sy}px`;c.innerHTML=ico(sty);
+    fxLayer.appendChild(c);
+    const tx=Math.min(a.left+24+i*(a.width/4),a.right-110)-sx,ty=Math.max(a.top+70,8)-sy;
+    if(c.animate)c.animate([
+      {transform:"translate(0,0) scale(.35) rotate(0deg)",opacity:0},
+      {transform:`translate(${tx*.45}px,${ty*.45-70}px) scale(1.15) rotate(${-14+i*10}deg)`,opacity:1,offset:.5},
+      {transform:`translate(${tx}px,${ty}px) scale(1) rotate(${(i-(n-1)/2)*6}deg)`,opacity:1}
+    ],{duration:dur,delay:i*130,easing:"cubic-bezier(.3,.7,.3,1)",fill:"both"});
+    cards.push(c);
+  }
+  try{await wait(dur+(n-1)*130+120)}finally{cards.forEach(c=>c.remove())}
+}
+async function moveTo(p,steps){
+  for(let i=0;i<steps;i++){
+    p.pos=p.pos%16+1;G.hop=G.players.indexOf(p);render();G.hop=null;sfx.step();
+    $("tk"+p.pos).insertAdjacentHTML("beforeend",`<span class="stepnum" style="--pc:var(${p.col})">${i+1}</span>`);await wait(p.human||stepMode()?220:Math.max(110,240*spd()));
+    if(p.pos===1)await payday(p);
+    if(p.pos===9)await shopStore(p);
+  }
+}
+async function resolve(p){
+  const s=SPACES[p.pos-1];
+  await landFX(s.n);
+  log(`${p.name} lands on ${s.n}: ${s.name}.`,p);
+  switch(s.n){
+    case 1: break;
+    case 3: await note(p,`<p class="prompt"><b>Phone Bill:</b> pay $50.</p>`);pay(p,50,"Phone Bill","bills");break;
+    case 9: break;
+    case 5: await note(p,`<p class="prompt"><b>Day Off:</b> relax at home. Gain 1 happiness chip.</p>`);gainChips(p,1,"Day Off");break;
+    case 6:{
+      const g=p.cards.has("coupon")?25:75;let out;
+      if(p.human) out=await ask(p,`<p class="prompt"><b>Dinner Time:</b> cook at home or eat out?</p>`,[{label:`Groceries: pay ${fmt(g)}${g===25?" (coupon)":""}`,value:false},{label:`Eat out: pay $175, gain 1 chip${needLoan(p,175)}`,value:true,alt:1}]);
+      else{out=STYLES[p.style].out&&p.money-175>=100;await cpuChoose(p,`<p class="prompt"><b>Dinner Time:</b> cook at home or eat out?</p>`,[fb(`Groceries: ${fmt(g)}`),fb("Eat out: $175, +1 happiness")],out?1:0,out?`${p.name} eats out`:`${p.name} buys groceries`,out?"Pays $175 and gains 1 happiness chip.":`Pays ${fmt(g)}${g===25?" with the Coupon Book":""}.`,{btns:true,stamp:out?"Eat out":"Groceries"})}
+      if(out&&p.human&&!await okLoan(p,175,"Eating out"))out=false;
+      if(out){pay(p,175,"Eating out","stuff",1);gainChips(p,1,"eating out")}else pay(p,g,"groceries","bills");
+      break;}
+    case 8: await note(p,`<p class="prompt"><b>A friend gives you a ride!</b> Move to space 11. You pass the Store on the way.</p>`);p.pos=9;render();await shopStore(p);p.pos=11;render();await resolve(p);break;
+    case 12:
+      if(p.cards.has("health")){sfx.protect();await note(p,`<p class="prompt"><b>Sick Day</b>, but Health Insurance covers it. No lost turn!</p>`);log(`${p.name}'s Health Insurance covers the Sick Day.`,p)}
+      else{sfx.lose();await note(p,`<p class="prompt"><b>Sick Day:</b> lose your next turn.</p>`);p.skip=true;render()}
+      break;
+    case 13:{
+      const a=p.cards.has("alarm")?"alarm":p.cards.has("speaker")?"speaker":null;
+      if(a){sfx.protect();await note(p,`<p class="prompt"><b>Overslept?</b> Not you! Your ${STOREBY[a].name} woke you up.</p>`);log(`${p.name}'s ${STOREBY[a].name} saves the day.`,p)}
+      else{sfx.lose();await note(p,`<p class="prompt"><b>Overslept:</b> lose your next turn.</p>`);p.skip=true;render()}
+      break;}
+    case 15: await note(p,`<p class="prompt"><b>Overtime!</b> Move to the Bonus space and collect ${fmt(BONUS)}.</p>`);p.pos=1;render();await payday(p);break;
+    default: await lifeCard(p);
+  }
+}
+async function takeTurn(p){
+  render();
+  sfx.turn();await banner(`${p.name}'s turn`,p.human?"":"Computer player",p.col.slice(2));
+  if(p.skip){p.skip=false;sfx.lose();log(`${p.name} loses this turn.`,p);await note(p,`<p class="prompt">You lose this turn.</p>`.replace("You",p.human?"You":p.name));return}
+  const d1=1+Math.floor(Math.random()*6),d2=1+Math.floor(Math.random()*6),b=TRANS[p.trans].bonus,tot=d1+d2+b;
+  if(p.human)setAction(header(p)+`<p class="prompt">You have ${fmt(p.money)} and ${p.chips} happiness chip${p.chips===1?"":"s"}. Your ${TRANS[p.trans].name} adds +${b}.</p><p class="prompt"><b>Tap the dice on the board to roll.</b></p>`);
+  else setAction(header(p)+`<p class="prompt">${p.name} is rolling the dice…</p>`);
+  await rollDice(p,d1,d2,b,p.human);
+  $("diceTxt").textContent=b?`+ ${b} = ${tot}`:`= ${tot}`;
+  setAction(header(p)+decisionBox(p,`${p.name} moves ${tot} spaces`,`${d1} + ${d2}${b?` + ${b} (${TRANS[p.trans].name})`:""}`));
+  log(`${p.name} rolls ${d1} + ${d2}${b?` + ${b} (${TRANS[p.trans].name})`:""} = ${tot}.`,p);
+  await moveTo(p,tot);
+  await resolve(p);
+  // short pause so money and happiness changes finish showing before the next turn
+  if(p.human)await wait(1100);
+  else await cpuWait(500);
+}
+// save the game on this device at the start of every turn, so a class can stop and pick it up later
+const SAVE_KEY="worthItSave";
+function saveGame(month,cur){
+  try{localStorage.setItem(SAVE_KEY,JSON.stringify({v:1,month,cur,len:G.len,savedAt:Date.now(),
+    players:G.players.map(p=>({...p,cards:[...p.cards]})),deck:G.deck,discard:G.discard,storePile:G.storePile}))}catch(e){}
+}
+function loadSave(){try{const d=JSON.parse(localStorage.getItem(SAVE_KEY)||"null");return d&&d.v===1&&Array.isArray(d.players)?d:null}catch(e){return null}}
+function clearSave(){try{localStorage.removeItem(SAVE_KEY)}catch(e){}}
+function showResume(){
+  const d=loadSave();$("resumeBox").hidden=!d;
+  if(d){const m=Math.min(d.month,d.len-1);$("resumeInfo").textContent=`${MONTHS[m]}, month ${m+1} of ${d.len} \u00b7 ${d.players.map(p=>p.name).join(", ")}`}
+}
+function resumeGame(){
+  const d=loadSave();if(!d)return;
+  token++;
+  G={players:d.players.map(p=>({...p,cards:new Set(p.cards)})),month:d.month,cur:-1,deck:d.deck,discard:d.discard,storePile:d.storePile,over:false,len:d.len};
+  G.prev=G.players.map(p=>({m:p.money,c:p.chips,l:p.loans}));audio();
+  $("setup").hidden=true;$("game").hidden=false;$("toolbar").hidden=false;$("log").innerHTML="";
+  requestAnimationFrame(setHdr);buildBoard();render();
+  log(`Welcome back! The game picks up in ${MONTHS[Math.min(d.month,d.len-1)]}.`);
+  runGame(d.month,d.cur);
+}
+async function runGame(startMonth=0,startCur=null){
+  try{
+    for(G.month=startMonth;G.month<G.len;G.month++){
+      let first=0;
+      if(startCur!==null&&G.month===startMonth){first=startCur;G.cur=-1;render()}
+      else{
+        G.cur=-1;render();
+        log(`${MONTHS[G.month]} begins. Payday! Everyone collects ${fmt(PAYCHECK)}.`);
+        sfx.payday();burst(document.querySelector(".board .center .logo-art"));await banner(MONTHS[G.month],`Payday! Everyone gets ${fmt(PAYCHECK)}`,"payday");
+        G.players.forEach(p=>p.money+=PAYCHECK);render();
+      }
+      for(G.cur=first;G.cur<G.players.length;G.cur++){saveGame(G.month,G.cur);await takeTurn(G.players[G.cur])}
+      await billsDue();
+      saveGame(G.month+1,null);
+    }
+    clearSave();
+    await finish();
+  }catch(e){if(e!=="abort")throw e}
+}
+// end-of-game results: scores, where each player's money went, and their best and worst happiness deals
+const RECAP_CATS=[["fun","Fun with friends","life"],["stuff","Stuff & subscriptions","cost"],["smart","Smart buys","store"],["ride","Transportation","move"],["bills","Bills & surprises","turn"]];
+function dealLine(name,d){return `${name}: ${d.cost?fmt(d.cost):"free"} for ${d.chips} happiness`}
+function showResults(rows,val,winText){
+  document.querySelectorAll(".endmodal").forEach(e=>e.remove());
+  const maxAmt=Math.max(1,...rows.flatMap(r=>RECAP_CATS.map(c=>(r.p.spent||{})[c[0]]||0)));
+  const sum=(cat,f)=>rows.reduce((a,r)=>a+Object.entries(r.p.deals||{}).filter(([n,d])=>f(n,d)).reduce((x,[n,d])=>x+(cat==="cost"?d.cost:d.chips),0),0);
+  const funNames=new Set(LIFE.filter(c=>c[0]==="fun").map(c=>c[1]));
+  const fc=sum("cost",n=>funNames.has(n)),fh=sum("chips",n=>funNames.has(n)),sc=sum("cost",n=>!funNames.has(n)),sh=sum("chips",n=>!funNames.has(n));
+  const per=(c,h)=>h?fmt(Math.round(c/h)):"\u2013";
+  const lesson=fh&&sh?`<div class="lesson"><b>The big lesson:</b> time with friends cost about <b>${per(fc,fh)}</b> per happiness chip. Stuff and subscriptions cost about <b>${per(sc,sh)}</b> per chip.${sc/sh>fc/fh?" Fun with friends was the better deal!":""}</div>`:"";
+  const cards=rows.map(r=>{
+    const p=r.p,deals=Object.entries(p.deals||{}).filter(([n,d])=>d.chips>0).sort((a,b)=>a[1].cost/a[1].chips-b[1].cost/b[1].chips);
+    const best=deals[0],worst=deals.length>1?deals[deals.length-1]:null;
+    const total=RECAP_CATS.reduce((a,c)=>a+((p.spent||{})[c[0]]||0),0);
+    return `<div class="rc" style="--pc:var(${p.col})"><h3><span class="tok" style="--pc:var(${p.col})">${p.name[0]}</span>${p.name}</h3><div class="tot">Spent ${fmt(total)} in all${p.loans?` \u00b7 loans cost an extra ${fmt(p.loans*50)}`:""}</div>
+      ${RECAP_CATS.map(([k,label,sty])=>{const v=(p.spent||{})[k]||0;return `<div class="bar" style="${S(sty)}"><span>${label}</span><span class="track"><span class="fill" style="display:block;width:${(v/maxAmt*100).toFixed(1)}%"></span></span><b>${fmt(v)}</b></div>`}).join("")}
+      ${best?`<div class="deal good">Best deal: <b>${dealLine(best[0],best[1])}</b></div>`:""}
+      ${worst&&worst[1].cost/worst[1].chips>=50&&worst[1].cost/worst[1].chips>best[1].cost/best[1].chips?`<div class="deal bad">Worst deal: <b>${dealLine(worst[0],worst[1])}</b></div>`:""}
+    </div>`}).join("");
+  const m=document.createElement("div");m.className="endmodal";m.setAttribute("role","dialog");m.setAttribute("aria-label","Game results");
+  m.innerHTML=`<div class="endbox"><h2>Game over! ${winText}</h2>
+    <div class="endtop">${bigCard("happy","Happiness Value","$"+val+" per chip",`Everyone trades in each happiness chip for $${val}.`,"","smile")}
+    <div class="tablewrap"><table><thead><tr><th>Player</th><th>Money</th><th>Loans paid back</th><th>Chips</th><th>Chip value</th><th>Final</th></tr></thead><tbody>
+    ${rows.map(r=>`<tr><td>${r.p.name}${r.p.human?"":" (computer)"}</td><td>${fmt(r.p.money)}</td><td>${r.loanPay?fmt(-r.loanPay):"\u2013"}</td><td>${r.p.chips}</td><td>+$${r.chipVal}</td><td><b>${fmt(r.final)}</b></td></tr>`).join("")}
+    </tbody></table></div></div>
+    <h2>Where did the money go?</h2>${lesson}<div class="recap">${cards}</div>
+    <div class="choices"><button type="button" class="btn" id="again2">Play again</button><button type="button" class="btn alt" id="closeRes">Close and see the board</button></div></div>`;
+  document.body.appendChild(m);
+  $("again2").onclick=()=>{m.remove();startGame()};$("closeRes").onclick=()=>m.remove();
+  $("again2").focus({preventScroll:true});
+}
+async function finish(){
+  G.over=true;G.cur=-1;render();
+  const val=shuffle([25,50,50,75])[0];
+  await banner("Game over!","Time to count up","happy");
+  setAction(`<h2>Drawing the Happiness Value card…</h2><div class="facedown">?</div><p class="small">How much is each happiness chip worth?</p>`);
+  sfx.drumroll();await wait(1400);
+  log(`The game is over! The Happiness Value card says $${val} per chip.`);
+  const rows=G.players.map(p=>{const loanPay=p.loans*150,chipVal=p.chips*val;return {p,loanPay,chipVal,final:p.money-loanPay+chipVal}}).sort((a,b)=>b.final-a.final);
+  const top=rows[0].final,winners=rows.filter(r=>r.final===top).map(r=>r.p.name);
+  const winText=`${winners.join(" and ")} win${winners.length>1?"":"s"}!`;
+  setAction(`<h2>Game over!</h2><p class="prompt"><b>${winText}</b></p><div class="choices"><button type="button" class="btn" id="showRes">See results</button><button type="button" class="btn alt" id="again">Play again</button></div>`);
+  $("again").onclick=()=>startGame();$("showRes").onclick=()=>showResults(rows,val,winText);
+  showResults(rows,val,winText);
+  render();
+  sfx.fanfare();confetti();
+}
+function startGame(){
+  token++;document.querySelectorAll(".endmodal").forEach(e=>e.remove());
+  const seats=readSeats();if(seats.length<2)return;
+  const styles=shuffle(["smart","spender","mixed",shuffle(["smart","spender","mixed"])[0]]);let si=0;
+  const players=seats.map(s=>s.human?{name:s.name,human:true,col:s.col}:{name:s.name,human:false,style:styles[si++],col:s.col});
+  G={players:players.map((p,i)=>({...p,money:START_MONEY,chips:1,trans:"walk",pos:1,skip:false,cards:new Set(),loans:0,spent:{},deals:{},subPaid:{}})),month:0,cur:-1,deck:buildDeck(),discard:[],storePile:shuffle(STORE.flatMap(s=>[s.id,s.id])),over:false,len:+$("nmonths").value};
+  G.prev=G.players.map(p=>({m:p.money,c:p.chips,l:p.loans}));audio();
+  $("setup").hidden=true;$("game").hidden=false;$("toolbar").hidden=false;$("log").innerHTML="";
+  buildBoard();render();
+  log(`New game! Everyone starts on the Bonus space with ${fmt(START_MONEY)}, 1 happiness chip, and walking.`);
+  runGame();
+}
+function readSeats(){
+  return SEAT_DEF.map((d,i)=>({type:$("seatType"+i).value,name:($("seatName"+i).value.trim()||($("seatType"+i).value==="cpu"?CPU_NAMES[i]:`Player ${i+1}`)).slice(0,14),col:PCOL[i]}))
+    .filter(s=>s.type!=="off").map(s=>({...s,human:s.type==="human"}));
+}
+function checkSeats(){const n=readSeats().length;$("seatWarn").hidden=n>=2;$("startBtn").disabled=n<2}
+function buildSeats(){
+  $("seats").innerHTML=SEAT_DEF.map((d,i)=>`<div class="seat"><span class="tok" style="--pc:var(${PCOL[i]})">${i+1}</span>
+    <select id="seatType${i}" aria-label="Player ${i+1} type"><option value="human">Real player</option><option value="cpu">Computer</option><option value="off">No one</option></select>
+    <input id="seatName${i}" maxlength="14" aria-label="Player ${i+1} name"></div>`).join("");
+  SEAT_DEF.forEach((d,i)=>{
+    const t=$("seatType"+i),nm=$("seatName"+i);
+    t.value=d;nm.value=d==="cpu"?CPU_NAMES[i]:`Player ${i+1}`;nm.disabled=d==="off";
+    t.onchange=()=>{
+      const v=nm.value.trim();
+      if(t.value==="cpu"&&(!v||v===`Player ${i+1}`))nm.value=CPU_NAMES[i];
+      if(t.value==="human"&&(!v||NAME_POOL.includes(v)))nm.value=`Player ${i+1}`;
+      nm.disabled=t.value==="off";checkSeats();
+    };
+  });
+  checkSeats();
+}
+buildSeats();
+setSound(SFX.on);
+function setHdr(){const h=document.querySelector("header");if(h)document.documentElement.style.setProperty("--hdr",h.offsetHeight+"px")}
+setHdr();addEventListener("resize",setHdr);
+$("startBtn").addEventListener("click",()=>requestAnimationFrame(setHdr));
+$("soundBtn").onclick=()=>{setSound(!SFX.on);if(SFX.on)sfx.chip()};
+{let a="on";try{a=localStorage.getItem("paydayAnim")||"on"}catch(e){}setAnim(a!=="off")}
+$("animBtn").onclick=()=>setAnim(reduced());
+$("startBtn").onclick=startGame;
+$("resumeBtn").onclick=resumeGame;
+$("dropSave").onclick=()=>{clearSave();showResume()};
+showResume();
+// new random computer names each time you go back to the setup screen (typed names are kept)
+function rerollNames(){
+  CPU_NAMES=pickNames();
+  SEAT_DEF.forEach((d,i)=>{const t=$("seatType"+i),nm=$("seatName"+i);const v=nm.value.trim();if(t.value==="cpu"&&(!v||NAME_POOL.includes(v)))nm.value=CPU_NAMES[i]});
+}
+$("restart").onclick=()=>{token++;G=null;document.querySelectorAll(".endmodal").forEach(e=>e.remove());rerollNames();showResume();$("game").hidden=true;$("toolbar").hidden=true;$("setup").hidden=false};
+</script>
+
+</body>
+</html>
